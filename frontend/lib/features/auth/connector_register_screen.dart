@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
+import '../../core/auth_api.dart'; // ✅ Added
 
 class ConnectorRegisterScreen extends StatefulWidget {
   const ConnectorRegisterScreen({super.key});
@@ -47,6 +48,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
     });
   }
 
+  // ✅ FINAL _onCreate FUNCTION
   Future<void> _onCreate() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false) || !_agree) {
@@ -59,24 +61,33 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
       _canSubmit = false;
     });
 
-    final payload = {
-      'name': _nameCtrl.text.trim(),
+    // ✅ New Payload
+    final payload = <String, dynamic>{
+      'fullName': _nameCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),
       'password': _passwordCtrl.text,
-      'phone': _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-      'licenseNo': _licenseCtrl.text.trim().toUpperCase(),
-      'nic': _nicCtrl.text.trim().toUpperCase(),
+      'confirmPassword': _confirmCtrl.text,
+      if (_phoneCtrl.text.trim().isNotEmpty) 'phone': _phoneCtrl.text.trim(),
+      'licenseNumber': _licenseCtrl.text.trim().toUpperCase(),
+      'nicNumber': _nicCtrl.text.trim().toUpperCase(),
       'vehicleNumber': _vehicleCtrl.text.trim().toUpperCase(),
     };
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final data = await connectorRegister(payload);
+      // ignore: avoid_print
+      print('[connectorRegister] parsed data: $data');
+
+      // Optional: store tokens and connector user if you add storage helpers
+      // final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
+      // final connector = Map<String, dynamic>.from(data['connector'] as Map);
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/connectorPanel');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
+        SnackBar(content: Text('Registration failed: ${e.toString()}')),
       );
     } finally {
       if (mounted) {
@@ -122,7 +133,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // 1) Full Name
+                        // Full Name
                         TextFormField(
                           controller: _nameCtrl,
                           textInputAction: TextInputAction.next,
@@ -134,7 +145,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 2) Email
+                        // Email
                         TextFormField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
@@ -148,7 +159,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 3) Password
+                        // Password
                         TextFormField(
                           controller: _passwordCtrl,
                           obscureText: _obscurePwd,
@@ -169,7 +180,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 4) Confirm Password
+                        // Confirm Password
                         TextFormField(
                           controller: _confirmCtrl,
                           obscureText: _obscureCpwd,
@@ -193,7 +204,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 5) Phone (optional)
+                        // Phone (optional)
                         TextFormField(
                           controller: _phoneCtrl,
                           keyboardType: TextInputType.phone,
@@ -213,7 +224,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 6) License Number
+                        // License Number
                         TextFormField(
                           controller: _licenseCtrl,
                           textCapitalization: TextCapitalization.characters,
@@ -236,7 +247,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 7) NIC Number
+                        // NIC Number
                         TextFormField(
                           controller: _nicCtrl,
                           textInputAction: TextInputAction.next,
@@ -259,7 +270,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // 8) Vehicle Number
+                        // Vehicle Number
                         TextFormField(
                           controller: _vehicleCtrl,
                           textCapitalization: TextCapitalization.characters,
@@ -283,6 +294,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 12),
 
+                        // Terms Checkbox
                         Row(
                           children: [
                             Checkbox(
@@ -302,6 +314,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 8),
 
+                        // Sign Up Button
                         Semantics(
                           button: true,
                           label: 'Sign up',
@@ -313,6 +326,7 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                         ),
                         const SizedBox(height: 8),
 
+                        // Already have account
                         Wrap(
                           alignment: WrapAlignment.center,
                           crossAxisAlignment: WrapCrossAlignment.center,

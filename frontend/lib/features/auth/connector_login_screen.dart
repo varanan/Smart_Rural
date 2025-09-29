@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
+import '../../core/auth_api.dart'; // ✅ Added
 
 class ConnectorLoginScreen extends StatefulWidget {
   const ConnectorLoginScreen({super.key});
@@ -25,6 +26,7 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
     super.dispose();
   }
 
+  // ✅ FINAL _onLogin FUNCTION (as per your request)
   Future<void> _onLogin() async {
     final form = _formKey.currentState;
     if (form == null) return;
@@ -32,13 +34,24 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
 
     setState(() => _loading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final data = await connectorLogin(
+        _emailCtrl.text.trim(),
+        _passwordCtrl.text,
+      );
+
+      // ignore: avoid_print
+      print('[connectorLogin] parsed data: $data');
+
+      // Optional: store tokens and connector user if you add storage helpers
+      // final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
+      // final connector = Map<String, dynamic>.from(data['connector'] as Map);
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/connectorPanel');
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please try again.')),
+        SnackBar(content: Text(e.toString())),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -76,6 +89,8 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
+
+                        // Email Field
                         TextFormField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
@@ -88,6 +103,8 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           autofillHints: const [AutofillHints.email],
                         ),
                         const SizedBox(height: 12),
+
+                        // Password Field
                         TextFormField(
                           controller: _passwordCtrl,
                           obscureText: _obscure,
@@ -107,6 +124,8 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           onFieldSubmitted: (_) => _onLogin(),
                         ),
                         const SizedBox(height: 8),
+
+                        // Remember Me
                         Row(
                           children: [
                             Checkbox(
@@ -118,12 +137,16 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
+
+                        // Login Button
                         GradientButton(
                           text: 'LOG IN',
                           loading: _loading,
                           onPressed: _loading ? null : _onLogin,
                         ),
                         const SizedBox(height: 8),
+
+                        // Forgot Password
                         Align(
                           alignment: Alignment.centerLeft,
                           child: TextButton(
@@ -136,6 +159,8 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
+
+                        // Sign Up Link
                         Wrap(
                           alignment: WrapAlignment.center,
                           crossAxisAlignment: WrapCrossAlignment.center,
