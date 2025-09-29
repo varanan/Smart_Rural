@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
+import '../../services/api_service.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -32,13 +33,20 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
     setState(() => _loading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await ApiService.adminLogin(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/adminDashboard');
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please try again.')),
+        SnackBar(
+          content: Text('Login failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -95,11 +103,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_rounded),
                             suffixIcon: IconButton(
-                              tooltip: _obscure ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscure
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscure = !_obscure),
+                              tooltip: _obscure
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
                           validator: Validators.password,
@@ -111,7 +124,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           children: [
                             Checkbox(
                               value: _rememberMe,
-                              onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                              onChanged: (v) =>
+                                  setState(() => _rememberMe = v ?? false),
                             ),
                             const SizedBox(width: 4),
                             const Expanded(child: Text('Remember me')),
@@ -129,7 +143,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           child: TextButton(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Password reset — coming soon')),
+                                const SnackBar(
+                                  content: Text('Password reset — coming soon'),
+                                ),
                               );
                             },
                             child: const Text('Forget Password'),
@@ -143,7 +159,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             const Text('Not a member? '),
                             TextButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, '/auth/admin/register');
+                                Navigator.pushNamed(
+                                  context,
+                                  '/auth/admin/register',
+                                );
                               },
                               child: const Text('Sign up now'),
                             ),

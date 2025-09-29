@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
+import '../../services/api_service.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -53,28 +54,30 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
       _canSubmit = false;
     });
 
-    final payload = {
-      'name': _nameCtrl.text.trim(),
-      'email': _emailCtrl.text.trim(),
-      'password': _passwordCtrl.text,
-      'phone': _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-    };
-
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await ApiService.adminRegister(
+        name: _nameCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      );
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/adminDashboard');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
+        SnackBar(
+          content: Text('Registration failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) {
         setState(() {
           _loading = false;
-          _recomputeCanSubmit();
         });
+        _recomputeCanSubmit();
       }
     }
   }
@@ -120,7 +123,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             labelText: 'Full Name',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
-                          validator: (v) => Validators.requiredField(v, fieldName: 'Full Name'),
+                          validator: (v) => Validators.requiredField(
+                            v,
+                            fieldName: 'Full Name',
+                          ),
                         ),
                         const SizedBox(height: 12),
 
@@ -145,14 +151,30 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscurePwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscurePwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscurePwd = !_obscurePwd),
+                              tooltip: _obscurePwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscurePwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscurePwd = !_obscurePwd),
                             ),
                           ),
-                          validator: Validators.password,
+                          validator: (v) {
+                            if (v == null || v.isEmpty)
+                              return 'Password is required';
+                            if (v.length < 8)
+                              return 'Password must be at least 8 characters';
+                            if (!RegExp(
+                              r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)',
+                            ).hasMatch(v)) {
+                              return 'Password must contain uppercase, lowercase, and number';
+                            }
+                            return null;
+                          },
                           autofillHints: const [AutofillHints.newPassword],
                         ),
                         const SizedBox(height: 12),
@@ -165,16 +187,23 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             labelText: 'Confirm Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscureCpwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscureCpwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscureCpwd = !_obscureCpwd),
+                              tooltip: _obscureCpwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscureCpwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscureCpwd = !_obscureCpwd),
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty) return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text) return 'Passwords do not match';
+                            if ((v ?? '').isEmpty)
+                              return 'Confirm Password is required';
+                            if (v != _passwordCtrl.text)
+                              return 'Passwords do not match';
                             return null;
                           },
                         ),
@@ -193,6 +222,9 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             if (t.isEmpty) return null;
                             if (t.length < 9 || t.length > 15) {
                               return 'Enter a valid phone (9–15 digits)';
+                            }
+                            if (!RegExp(r'^[0-9]+$').hasMatch(t)) {
+                              return 'Phone number must contain only digits';
                             }
                             return null;
                           },
@@ -225,7 +257,9 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                           child: GradientButton(
                             text: 'SIGN UP',
                             loading: _loading,
-                            onPressed: (_canSubmit && !_loading) ? _onCreate : null,
+                            onPressed: (_canSubmit && !_loading)
+                                ? _onCreate
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -237,7 +271,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             const Text('Already have an account? '),
                             TextButton(
                               onPressed: () {
-                                Navigator.pushReplacementNamed(context, '/auth/admin/login');
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/auth/admin/login',
+                                );
                               },
                               child: const Text('Log in'),
                             ),
