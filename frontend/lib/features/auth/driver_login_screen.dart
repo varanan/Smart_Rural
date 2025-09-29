@@ -43,7 +43,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
       final driver = Map<String, dynamic>.from(data['driver'] as Map);
 
       if (_rememberMe) {
-        await AuthStorage.save(
+        await AuthStorage.saveDriver(
           access: tokens['access'] as String,
           refresh: tokens['refresh'] as String,
           driver: driver,

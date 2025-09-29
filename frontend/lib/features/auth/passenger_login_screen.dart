@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
+import '../../core/auth_api.dart';
 
 class PassengerLoginScreen extends StatefulWidget {
   const PassengerLoginScreen({super.key});
@@ -18,6 +19,8 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
   bool _obscure = true;
   bool _loading = false;
 
+  final _api = PassengerAuthApi();
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -32,13 +35,27 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
 
     setState(() => _loading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final data = await _api.login(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
+      final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
+      final passenger = Map<String, dynamic>.from(data['passenger'] as Map);
+
+      if (_rememberMe) {
+        await AuthStorage.savePassenger(
+          access: tokens['access'] as String,
+          refresh: tokens['refresh'] as String,
+          passenger: passenger,
+        );
+      }
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/passengerHome');
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please try again.')),
+        SnackBar(content: Text(e.toString())),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
