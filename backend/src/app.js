@@ -4,6 +4,7 @@ const cors = require('cors');
 const { connectDB } = require('./config/db');
 const errorHandler = require('./middlewares/error.middleware');
 const driverRoutes = require('./routes/driver.routes');
+const passengerRoutes = require('./routes/passenger.routes');
 const authRoutes = require('./routes/auth.routes');
 const logger = require('./utils/logger');
 
@@ -25,6 +26,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/drivers', driverRoutes);
+app.use('/api/passenger', passengerRoutes);
 app.use('/api/auth', authRoutes);
 
 // Error handling middleware (must be last)
