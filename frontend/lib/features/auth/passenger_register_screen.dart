@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
+import '../../core/auth_api.dart';
 
 class PassengerRegisterScreen extends StatefulWidget {
   const PassengerRegisterScreen({super.key});
@@ -23,6 +24,8 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
   bool _agree = false;
   bool _loading = false;
   bool _canSubmit = false;
+
+  final _api = PassengerAuthApi();
 
   @override
   void dispose() {
@@ -53,15 +56,23 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
       _canSubmit = false;
     });
 
-    final payload = {
-      'name': _nameCtrl.text.trim(),
-      'email': _emailCtrl.text.trim(),
-      'password': _passwordCtrl.text,
-      'phone': _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-    };
-
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final data = await _api.signup(
+        fullName: _nameCtrl.text.trim(),
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+        confirmPassword: _confirmCtrl.text,
+        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      );
+
+      final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
+      final passenger = Map<String, dynamic>.from(data['passenger'] as Map);
+      await AuthStorage.savePassenger(
+        access: tokens['access'] as String,
+        refresh: tokens['refresh'] as String,
+        passenger: passenger,
+      );
+
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/passengerHome');
     } catch (e) {
@@ -187,13 +198,13 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Phone (optional)',
                             prefixIcon: Icon(Icons.phone_outlined),
+                            helperText: 'Sri Lankan format: 0XXXXXXXXX',
                           ),
                           validator: (v) {
                             final t = v?.trim() ?? '';
                             if (t.isEmpty) return null;
-                            if (t.length < 9 || t.length > 15) {
-                              return 'Enter a valid phone (9–15 digits)';
-                            }
+                            final reg = RegExp(r'^0\d{9}$');
+                            if (!reg.hasMatch(t)) return 'Enter a valid phone (0XXXXXXXXX)';
                             return null;
                           },
                           onFieldSubmitted: (_) => _onCreate(),
@@ -217,6 +228,7 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 8),
 
                         Semantics(

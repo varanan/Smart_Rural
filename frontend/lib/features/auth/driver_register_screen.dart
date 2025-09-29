@@ -76,7 +76,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
 
       final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       final driver = Map<String, dynamic>.from(data['driver'] as Map);
-      await AuthStorage.save(
+      await AuthStorage.saveDriver(
         access: tokens['access'] as String,
         refresh: tokens['refresh'] as String,
         driver: driver,

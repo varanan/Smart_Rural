@@ -1,11 +1,12 @@
 const logger = require('../utils/logger');
 
 const errorHandler = (err, req, res, next) => {
-  logger.error('Error occurred', { 
-    error: err.message, 
+  logger.error('Error occurred', {
+    error: err.message,
     stack: err.stack,
     url: req.url,
-    method: req.method
+    method: req.method,
+    body: req.body
   });
 
   // Joi validation errors
@@ -20,10 +21,19 @@ const errorHandler = (err, req, res, next) => {
   // MongoDB duplicate key error
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
+    const value = err.keyValue[field];
+
+    logger.error('Duplicate key error', {
+      field,
+      value,
+      collection: err.collection
+    });
+
     return res.status(409).json({
       success: false,
       message: `${field} already exists`,
-      field: field
+      field: field,
+      details: `A record with ${field}: "${value}" already exists`
     });
   }
 
@@ -42,7 +52,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Default error
+  // Default fallback error
   res.status(500).json({
     success: false,
     message: 'Internal server error'

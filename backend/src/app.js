@@ -3,34 +3,52 @@ const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./config/db');
 const errorHandler = require('./middlewares/error.middleware');
-const driverRoutes = require('./routes/driver.routes');
-const authRoutes = require('./routes/auth.routes');
 const logger = require('./utils/logger');
+
+// Route imports
+const connectorRoutes = require('./routes/connector.routes');
+const driverRoutes = require('./routes/driver.routes');
+const passengerRoutes = require('./routes/passenger.routes');
+const authRoutes = require('./routes/auth.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
 
+// -------------------------
 // Middleware
+// -------------------------
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// -------------------------
 // Health check
+// -------------------------
 app.get('/health', (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
 });
 
+// -------------------------
 // Routes
+// -------------------------
+app.use('/api/connector', connectorRoutes);
 app.use('/api/drivers', driverRoutes);
+app.use('/api/passenger', passengerRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
+// -------------------------
 // Error handling middleware (must be last)
+// -------------------------
 app.use(errorHandler);
 
-// 404 handler
+// -------------------------
+// 404 Handler (Fallback)
+// -------------------------
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -38,16 +56,18 @@ app.use((req, res) => {
   });
 });
 
-// Start server
+// -------------------------
+// Server start
+// -------------------------
 const startServer = async () => {
   try {
     await connectDB();
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
-      logger.info(`Server running on port ${port}`);
+      logger.info(`🚀 Server running on port ${port}`);
     });
   } catch (error) {
-    logger.error('Failed to start server', { error: error.message });
+    logger.error('❌ Failed to start server', { error: error.message });
     process.exit(1);
   }
 };
