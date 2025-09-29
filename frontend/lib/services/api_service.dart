@@ -182,6 +182,177 @@ class ApiService {
     }
   }
 
+  // Bus TimeTable Operations
+  static Future<Map<String, dynamic>> getBusTimeTable({
+    String? from,
+    String? to,
+    String? startTime,
+    String? endTime,
+    String? busType,
+  }) async {
+    try {
+      var url = Uri.parse('$baseUrl/bus-timetable');
+
+      // Add query parameters
+      final queryParams = <String, String>{};
+      if (from != null && from.isNotEmpty) queryParams['from'] = from;
+      if (to != null && to.isNotEmpty) queryParams['to'] = to;
+      if (startTime != null && startTime.isNotEmpty)
+        queryParams['startTime'] = startTime;
+      if (endTime != null && endTime.isNotEmpty)
+        queryParams['endTime'] = endTime;
+      if (busType != null && busType.isNotEmpty)
+        queryParams['busType'] = busType;
+
+      if (queryParams.isNotEmpty) {
+        url = url.replace(queryParameters: queryParams);
+      }
+
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
+        statusCode: 0,
+        errors: null,
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Network error: ${e.toString()}',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> createBusTimeTable({
+    required String from,
+    required String to,
+    required String startTime,
+    required String endTime,
+    required String busType,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable');
+      final body = {
+        'from': from,
+        'to': to,
+        'startTime': startTime,
+        'endTime': endTime,
+        'busType': busType,
+      };
+
+      final response = await http
+          .post(
+            url,
+            headers: await _getHeaders(includeAuth: true),
+            body: json.encode(body),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
+        statusCode: 0,
+        errors: null,
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Network error: ${e.toString()}',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateBusTimeTable({
+    required String id,
+    required String from,
+    required String to,
+    required String startTime,
+    required String endTime,
+    required String busType,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/$id');
+      final body = {
+        'from': from,
+        'to': to,
+        'startTime': startTime,
+        'endTime': endTime,
+        'busType': busType,
+      };
+
+      final response = await http
+          .put(
+            url,
+            headers: await _getHeaders(includeAuth: true),
+            body: json.encode(body),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
+        statusCode: 0,
+        errors: null,
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Network error: ${e.toString()}',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteBusTimeTable(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/$id');
+
+      final response = await http
+          .delete(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } on SocketException {
+      throw ApiException(
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
+        statusCode: 0,
+        errors: null,
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Network error: ${e.toString()}',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<String?> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_role');
+  }
+
+  static Future<bool> isAdmin() async {
+    final role = await getUserRole();
+    return role == 'admin' || role == 'super_admin';
+  }
+
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
