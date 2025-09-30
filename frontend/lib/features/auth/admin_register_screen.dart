@@ -88,6 +88,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     const maxCardWidth = 520.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

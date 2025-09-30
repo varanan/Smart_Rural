@@ -59,6 +59,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     const maxCardWidth = 480.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

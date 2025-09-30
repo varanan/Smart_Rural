@@ -54,9 +54,9 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
       Navigator.pushReplacementNamed(context, '/driverHome');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -68,6 +68,11 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
     const maxCardWidth = 480.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -112,11 +117,16 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_rounded),
                             suffixIcon: IconButton(
-                              tooltip: _obscure ? 'Show password' : 'Hide password',
+                              tooltip: _obscure
+                                  ? 'Show password'
+                                  : 'Hide password',
                               icon: Icon(
-                                _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                                _obscure
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
                               ),
-                              onPressed: () => setState(() => _obscure = !_obscure),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
                           validator: Validators.password,
@@ -128,7 +138,8 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           children: [
                             Checkbox(
                               value: _rememberMe,
-                              onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                              onChanged: (v) =>
+                                  setState(() => _rememberMe = v ?? false),
                             ),
                             const SizedBox(width: 4),
                             const Expanded(child: Text('Remember me')),
@@ -146,7 +157,9 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           child: TextButton(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Password reset — coming soon')),
+                                const SnackBar(
+                                  content: Text('Password reset — coming soon'),
+                                ),
                               );
                             },
                             child: const Text('Forget Password'),
@@ -160,7 +173,10 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                             const Text('Not a member? '),
                             TextButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, '/auth/driver/register');
+                                Navigator.pushNamed(
+                                  context,
+                                  '/auth/driver/register',
+                                );
                               },
                               child: const Text('Sign up now'),
                             ),

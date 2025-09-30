@@ -7,7 +7,8 @@ class ConnectorRegisterScreen extends StatefulWidget {
   const ConnectorRegisterScreen({super.key});
 
   @override
-  State<ConnectorRegisterScreen> createState() => _ConnectorRegisterScreenState();
+  State<ConnectorRegisterScreen> createState() =>
+      _ConnectorRegisterScreenState();
 }
 
 class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
@@ -105,6 +106,11 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
     const maxCardWidth = 520.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -141,7 +147,10 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                             labelText: 'Full Name',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
-                          validator: (v) => Validators.requiredField(v, fieldName: 'Full Name'),
+                          validator: (v) => Validators.requiredField(
+                            v,
+                            fieldName: 'Full Name',
+                          ),
                         ),
                         const SizedBox(height: 12),
 
@@ -168,11 +177,16 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscurePwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscurePwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscurePwd = !_obscurePwd),
+                              tooltip: _obscurePwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscurePwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscurePwd = !_obscurePwd),
                             ),
                           ),
                           validator: Validators.password,
@@ -189,16 +203,23 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                             labelText: 'Confirm Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscureCpwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscureCpwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscureCpwd = !_obscureCpwd),
+                              tooltip: _obscureCpwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscureCpwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscureCpwd = !_obscureCpwd),
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty) return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text) return 'Passwords do not match';
+                            if ((v ?? '').isEmpty)
+                              return 'Confirm Password is required';
+                            if (v != _passwordCtrl.text)
+                              return 'Passwords do not match';
                             return null;
                           },
                         ),
@@ -321,7 +342,9 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                           child: GradientButton(
                             text: 'SIGN UP',
                             loading: _loading,
-                            onPressed: (_canSubmit && !_loading) ? _onCreate : null,
+                            onPressed: (_canSubmit && !_loading)
+                                ? _onCreate
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 8),

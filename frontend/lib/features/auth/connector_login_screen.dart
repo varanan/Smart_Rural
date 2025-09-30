@@ -50,9 +50,9 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
       Navigator.pushReplacementNamed(context, '/connectorPanel');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -64,6 +64,11 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
     const maxCardWidth = 480.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -112,11 +117,16 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_rounded),
                             suffixIcon: IconButton(
-                              tooltip: _obscure ? 'Show password' : 'Hide password',
+                              tooltip: _obscure
+                                  ? 'Show password'
+                                  : 'Hide password',
                               icon: Icon(
-                                _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                                _obscure
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
                               ),
-                              onPressed: () => setState(() => _obscure = !_obscure),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
                           validator: Validators.password,
@@ -130,7 +140,8 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           children: [
                             Checkbox(
                               value: _rememberMe,
-                              onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                              onChanged: (v) =>
+                                  setState(() => _rememberMe = v ?? false),
                             ),
                             const SizedBox(width: 4),
                             const Expanded(child: Text('Remember me')),
@@ -152,7 +163,9 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                           child: TextButton(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Password reset — coming soon')),
+                                const SnackBar(
+                                  content: Text('Password reset — coming soon'),
+                                ),
                               );
                             },
                             child: const Text('Forget Password'),
@@ -168,7 +181,10 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
                             const Text('Not a member? '),
                             TextButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, '/auth/connector/register');
+                                Navigator.pushNamed(
+                                  context,
+                                  '/auth/connector/register',
+                                );
                               },
                               child: const Text('Sign up now'),
                             ),
