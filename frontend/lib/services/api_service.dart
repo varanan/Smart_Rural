@@ -197,12 +197,15 @@ class ApiService {
       final queryParams = <String, String>{};
       if (from != null && from.isNotEmpty) queryParams['from'] = from;
       if (to != null && to.isNotEmpty) queryParams['to'] = to;
-      if (startTime != null && startTime.isNotEmpty)
+      if (startTime != null && startTime.isNotEmpty) {
         queryParams['startTime'] = startTime;
-      if (endTime != null && endTime.isNotEmpty)
+      }
+      if (endTime != null && endTime.isNotEmpty) {
         queryParams['endTime'] = endTime;
-      if (busType != null && busType.isNotEmpty)
+      }
+      if (busType != null && busType.isNotEmpty) {
         queryParams['busType'] = busType;
+      }
 
       if (queryParams.isNotEmpty) {
         url = url.replace(queryParameters: queryParams);

@@ -196,7 +196,10 @@ class _BusTimeTableScreenState extends State<BusTimeTableScreen> {
     });
   }
 
+  // Admin-only functions
   Future<void> _deleteTimetable(BusTimeTable timetable) async {
+    if (!_isAdmin) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -244,6 +247,8 @@ class _BusTimeTableScreenState extends State<BusTimeTableScreen> {
   }
 
   void _showAddEditForm([BusTimeTable? timetable]) {
+    if (!_isAdmin) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -506,6 +511,7 @@ class _BusTimeTableScreenState extends State<BusTimeTableScreen> {
           ],
         ),
       ),
+      // Only show FAB for admin users
       floatingActionButton: _isAdmin
           ? FloatingActionButton.extended(
               onPressed: () => _showAddEditForm(),
@@ -539,7 +545,7 @@ class _BusTimeTableScreenState extends State<BusTimeTableScreen> {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: controller.text.isEmpty ? null : controller.text,
+          initialValue: controller.text.isEmpty ? null : controller.text,
           decoration: InputDecoration(
             hintText: 'Select $label',
             hintStyle: const TextStyle(color: Colors.grey),
@@ -615,6 +621,7 @@ class _BusTimeTableScreenState extends State<BusTimeTableScreen> {
                           ),
                         ),
                       ),
+                      // Only show admin menu for admin users
                       if (_isAdmin) ...[
                         const Spacer(),
                         PopupMenuButton<String>(

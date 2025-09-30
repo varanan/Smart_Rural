@@ -336,7 +336,7 @@ class _BusTimeTableFormState extends State<BusTimeTableForm> {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: controller.text.isEmpty ? null : controller.text,
+          initialValue: controller.text.isEmpty ? null : controller.text,
           decoration: InputDecoration(
             hintText: 'Select ${label.replaceAll(' *', '')}',
             hintStyle: const TextStyle(color: Colors.grey),
@@ -393,7 +393,7 @@ class _BusTimeTableFormState extends State<BusTimeTableForm> {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: _selectedBusType,
+          initialValue: _selectedBusType,
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.directions_bus, color: Colors.grey),
             filled: true,

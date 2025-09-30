@@ -9,8 +9,7 @@ import 'features/auth/passenger_register_screen.dart';
 import 'features/auth/admin_register_screen.dart';
 import 'features/auth/connector_register_screen.dart';
 import 'features/bus_timetable/bus_timetable_screen.dart';
-import '../../core/validators.dart';
-import '../../widgets/gradient_button.dart';
+import 'features/bus_timetable/customer_bus_timetable_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,7 +44,9 @@ class MyApp extends StatelessWidget {
         '/auth/connector/register': (context) =>
             const ConnectorRegisterScreen(),
         '/connectorPanel': (context) => const _ConnectorPanelPlaceholder(),
-        '/bus-timetable': (context) => const BusTimeTableScreen(),
+        '/bus-timetable': (context) => const BusTimeTableScreen(), // Admin view
+        '/customer-bus-timetable': (context) =>
+            const CustomerBusTimeTableScreen(), // Customer view
       },
     );
   }
@@ -80,7 +81,8 @@ class _DriverHomePlaceholder extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/bus-timetable'),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/customer-bus-timetable'),
                 icon: const Icon(Icons.schedule),
                 label: const Text('View Bus Time Table'),
                 style: ElevatedButton.styleFrom(
@@ -122,7 +124,8 @@ class _PassengerHomePlaceholder extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/bus-timetable'),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/customer-bus-timetable'),
                 icon: const Icon(Icons.schedule),
                 label: const Text('View Bus Time Table'),
                 style: ElevatedButton.styleFrom(
@@ -214,7 +217,8 @@ class _ConnectorPanelPlaceholder extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/bus-timetable'),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/customer-bus-timetable'),
                 icon: const Icon(Icons.schedule),
                 label: const Text('View Bus Time Table'),
                 style: ElevatedButton.styleFrom(
