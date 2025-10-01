@@ -86,9 +86,9 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
       Navigator.pushReplacementNamed(context, '/driverHome');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -105,6 +105,11 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
     const maxCardWidth = 520.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -141,7 +146,10 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                             labelText: 'Full Name',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
-                          validator: (v) => Validators.requiredField(v, fieldName: 'Full Name'),
+                          validator: (v) => Validators.requiredField(
+                            v,
+                            fieldName: 'Full Name',
+                          ),
                         ),
                         const SizedBox(height: 12),
 
@@ -168,11 +176,16 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscurePwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscurePwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscurePwd = !_obscurePwd),
+                              tooltip: _obscurePwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscurePwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscurePwd = !_obscurePwd),
                             ),
                           ),
                           validator: Validators.password,
@@ -189,16 +202,23 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                             labelText: 'Confirm Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscureCpwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscureCpwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscureCpwd = !_obscureCpwd),
+                              tooltip: _obscureCpwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscureCpwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscureCpwd = !_obscureCpwd),
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty) return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text) return 'Passwords do not match';
+                            if ((v ?? '').isEmpty)
+                              return 'Confirm Password is required';
+                            if (v != _passwordCtrl.text)
+                              return 'Passwords do not match';
                             return null;
                           },
                         ),
@@ -218,7 +238,8 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                             final t = v?.trim() ?? '';
                             if (t.isEmpty) return 'Phone is required';
                             final reg = RegExp(r'^0\d{9}$');
-                            if (!reg.hasMatch(t)) return 'Enter a valid phone (0XXXXXXXXX)';
+                            if (!reg.hasMatch(t))
+                              return 'Enter a valid phone (0XXXXXXXXX)';
                             return null;
                           },
                         ),
@@ -318,7 +339,9 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                         GradientButton(
                           text: 'CREATE ACCOUNT',
                           loading: _loading,
-                          onPressed: (_canSubmit && !_loading) ? _onCreate : null,
+                          onPressed: (_canSubmit && !_loading)
+                              ? _onCreate
+                              : null,
                         ),
 
                         const SizedBox(height: 8),
@@ -330,7 +353,10 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                             const Text('Already have an account? '),
                             TextButton(
                               onPressed: () {
-                                Navigator.pushReplacementNamed(context, '/auth/driver/login');
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/auth/driver/login',
+                                );
                               },
                               child: const Text('Log in'),
                             ),

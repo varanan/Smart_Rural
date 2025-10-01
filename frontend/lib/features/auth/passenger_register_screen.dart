@@ -7,7 +7,8 @@ class PassengerRegisterScreen extends StatefulWidget {
   const PassengerRegisterScreen({super.key});
 
   @override
-  State<PassengerRegisterScreen> createState() => _PassengerRegisterScreenState();
+  State<PassengerRegisterScreen> createState() =>
+      _PassengerRegisterScreenState();
 }
 
 class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
@@ -77,9 +78,9 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
       Navigator.pushReplacementNamed(context, '/passengerHome');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -96,6 +97,11 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
     const maxCardWidth = 520.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -131,7 +137,10 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             labelText: 'Full Name',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
-                          validator: (v) => Validators.requiredField(v, fieldName: 'Full Name'),
+                          validator: (v) => Validators.requiredField(
+                            v,
+                            fieldName: 'Full Name',
+                          ),
                         ),
                         const SizedBox(height: 12),
 
@@ -156,11 +165,16 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscurePwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscurePwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscurePwd = !_obscurePwd),
+                              tooltip: _obscurePwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscurePwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscurePwd = !_obscurePwd),
                             ),
                           ),
                           validator: Validators.password,
@@ -176,16 +190,23 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             labelText: 'Confirm Password',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              tooltip: _obscureCpwd ? 'Show password' : 'Hide password',
-                              icon: Icon(_obscureCpwd
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded),
-                              onPressed: () => setState(() => _obscureCpwd = !_obscureCpwd),
+                              tooltip: _obscureCpwd
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscureCpwd
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscureCpwd = !_obscureCpwd),
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty) return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text) return 'Passwords do not match';
+                            if ((v ?? '').isEmpty)
+                              return 'Confirm Password is required';
+                            if (v != _passwordCtrl.text)
+                              return 'Passwords do not match';
                             return null;
                           },
                         ),
@@ -204,7 +225,8 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             final t = v?.trim() ?? '';
                             if (t.isEmpty) return null;
                             final reg = RegExp(r'^0\d{9}$');
-                            if (!reg.hasMatch(t)) return 'Enter a valid phone (0XXXXXXXXX)';
+                            if (!reg.hasMatch(t))
+                              return 'Enter a valid phone (0XXXXXXXXX)';
                             return null;
                           },
                           onFieldSubmitted: (_) => _onCreate(),
@@ -237,7 +259,9 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                           child: GradientButton(
                             text: 'SIGN UP',
                             loading: _loading,
-                            onPressed: (_canSubmit && !_loading) ? _onCreate : null,
+                            onPressed: (_canSubmit && !_loading)
+                                ? _onCreate
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 8),

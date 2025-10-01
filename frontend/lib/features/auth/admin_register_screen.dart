@@ -88,6 +88,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     const maxCardWidth = 520.0;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -164,10 +169,12 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             ),
                           ),
                           validator: (v) {
-                            if (v == null || v.isEmpty)
+                            if (v == null || v.isEmpty) {
                               return 'Password is required';
-                            if (v.length < 8)
+                            }
+                            if (v.length < 8) {
                               return 'Password must be at least 8 characters';
+                            }
                             if (!RegExp(
                               r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)',
                             ).hasMatch(v)) {
@@ -200,10 +207,12 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty)
+                            if ((v ?? '').isEmpty) {
                               return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text)
+                            }
+                            if (v != _passwordCtrl.text) {
                               return 'Passwords do not match';
+                            }
                             return null;
                           },
                         ),
