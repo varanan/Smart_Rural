@@ -216,10 +216,12 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty)
+                            if ((v ?? '').isEmpty) {
                               return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text)
+                            }
+                            if (v != _passwordCtrl.text) {
                               return 'Passwords do not match';
+                            }
                             return null;
                           },
                         ),

@@ -203,10 +203,12 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             ),
                           ),
                           validator: (v) {
-                            if ((v ?? '').isEmpty)
+                            if ((v ?? '').isEmpty) {
                               return 'Confirm Password is required';
-                            if (v != _passwordCtrl.text)
+                            }
+                            if (v != _passwordCtrl.text) {
                               return 'Passwords do not match';
+                            }
                             return null;
                           },
                         ),
@@ -225,8 +227,9 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                             final t = v?.trim() ?? '';
                             if (t.isEmpty) return null;
                             final reg = RegExp(r'^0\d{9}$');
-                            if (!reg.hasMatch(t))
+                            if (!reg.hasMatch(t)) {
                               return 'Enter a valid phone (0XXXXXXXXX)';
+                            }
                             return null;
                           },
                           onFieldSubmitted: (_) => _onCreate(),

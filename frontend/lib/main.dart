@@ -10,6 +10,8 @@ import 'features/auth/admin_register_screen.dart';
 import 'features/auth/connector_register_screen.dart';
 import 'features/bus_timetable/bus_timetable_screen.dart';
 import 'features/bus_timetable/customer_bus_timetable_screen.dart';
+import 'features/dashboard/passenger_dashboard.dart';
+import 'features/chatbot/chatbot_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,7 +38,7 @@ class MyApp extends StatelessWidget {
         '/auth/passenger/login': (context) => const PassengerLoginScreen(),
         '/auth/passenger/register': (context) =>
             const PassengerRegisterScreen(),
-        '/passengerHome': (context) => const _PassengerHomePlaceholder(),
+        '/passengerHome': (context) => const PassengerDashboard(),
         '/auth/admin/login': (context) => const AdminLoginScreen(),
         '/auth/admin/register': (context) => const AdminRegisterScreen(),
         '/adminDashboard': (context) => const _AdminDashboardPlaceholder(),
@@ -47,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/bus-timetable': (context) => const BusTimeTableScreen(), // Admin view
         '/customer-bus-timetable': (context) =>
             const CustomerBusTimeTableScreen(), // Customer view
+        '/chatbot': (context) => const ChatbotScreen(), // AI Chatbot
       },
     );
   }
@@ -80,16 +83,31 @@ class _DriverHomePlaceholder extends StatelessWidget {
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    Navigator.pushNamed(context, '/customer-bus-timetable'),
-                icon: const Icon(Icons.schedule),
-                label: const Text('View Bus Time Table'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/customer-bus-timetable'),
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('View Bus Time Table'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/chatbot'),
+                    icon: const Icon(Icons.smart_toy),
+                    label: const Text('AI Assistant'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -170,15 +188,31 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/bus-timetable'),
-                icon: const Icon(Icons.schedule),
-                label: const Text('Manage Bus Time Table'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/bus-timetable'),
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('Manage Bus Time Table'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/chatbot'),
+                    icon: const Icon(Icons.smart_toy),
+                    label: const Text('AI Assistant'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -216,16 +250,31 @@ class _ConnectorPanelPlaceholder extends StatelessWidget {
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    Navigator.pushNamed(context, '/customer-bus-timetable'),
-                icon: const Icon(Icons.schedule),
-                label: const Text('View Bus Time Table'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/customer-bus-timetable'),
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('View Bus Time Table'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/chatbot'),
+                    icon: const Icon(Icons.smart_toy),
+                    label: const Text('AI Assistant'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
