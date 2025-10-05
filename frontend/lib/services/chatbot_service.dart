@@ -3,12 +3,13 @@ import 'dart:math';
 import '../models/chat_message.dart';
 import '../models/bus_timetable.dart';
 import 'api_service.dart';
+import 'ai_service.dart';
 
 class ChatbotService {
   static final List<String> _greetings = [
-    'Hello! I\'m your Smart Rural Transportation assistant. How can I help you today?',
-    'Hi there! I\'m here to help you with bus schedules and transportation info. What do you need?',
-    'Welcome! I can help you find bus routes, schedules, and answer transportation questions. How may I assist you?',
+    'Hello! I\'m your AI-powered Smart Rural Transportation assistant. How can I help you today?',
+    'Hi there! I\'m an AI assistant here to help you with bus schedules and transportation info. What do you need?',
+    'Welcome! I\'m your intelligent assistant for bus routes, schedules, and transportation questions. How may I assist you?',
   ];
 
   static final List<String> _busRelatedKeywords = [
@@ -33,28 +34,6 @@ class ChatbotService {
     'semi-luxury',
   ];
 
-  static final Map<String, List<String>> _quickResponses = {
-    'greeting': [
-      'Hello! How can I help you with your travel plans?',
-      'Hi! I\'m here to assist with bus schedules and routes.',
-      'Welcome! What transportation information do you need?',
-    ],
-    'thanks': [
-      'You\'re welcome! Have a safe journey!',
-      'Happy to help! Safe travels!',
-      'Glad I could assist! Enjoy your trip!',
-    ],
-    'goodbye': [
-      'Goodbye! Have a great day and safe travels!',
-      'See you later! Don\'t hesitate to ask if you need more help.',
-      'Take care! Have a wonderful journey!',
-    ],
-    'help': [
-      'I can help you with:\n• Finding bus schedules\n• Route information\n• Departure and arrival times\n• Bus types (Express, Luxury, etc.)\n\nJust ask me something like "Show me buses from Colombo to Kandy"',
-      'Here\'s what I can do:\n• Search bus timetables\n• Provide route details\n• Help with travel planning\n• Answer transportation questions\n\nTry asking "What buses go from [city] to [city]?"',
-    ],
-  };
-
   static final List<String> _locations = [
     'Colombo',
     'Kandy',
@@ -73,72 +52,21 @@ class ChatbotService {
     'Hambantota',
   ];
 
+  // Main message processing function with AI integration
   static Future<ChatMessage> processMessage(String userMessage) async {
     final messageId = _generateId();
     final timestamp = DateTime.now();
 
     try {
-      // Normalize the message
       final normalizedMessage = userMessage.toLowerCase().trim();
 
-      // Check for greetings
-      if (_isGreeting(normalizedMessage)) {
-        return ChatMessage(
-          id: messageId,
-          content: _getRandomResponse(_quickResponses['greeting']!),
-          isUser: false,
-          timestamp: timestamp,
-          type: ChatMessageType.text,
-        );
-      }
-
-      // Check for thanks
-      if (_isThanks(normalizedMessage)) {
-        return ChatMessage(
-          id: messageId,
-          content: _getRandomResponse(_quickResponses['thanks']!),
-          isUser: false,
-          timestamp: timestamp,
-          type: ChatMessageType.text,
-        );
-      }
-
-      // Check for goodbye
-      if (_isGoodbye(normalizedMessage)) {
-        return ChatMessage(
-          id: messageId,
-          content: _getRandomResponse(_quickResponses['goodbye']!),
-          isUser: false,
-          timestamp: timestamp,
-          type: ChatMessageType.text,
-        );
-      }
-
-      // Check for help request
-      if (_isHelpRequest(normalizedMessage)) {
-        return ChatMessage(
-          id: messageId,
-          content: _getRandomResponse(_quickResponses['help']!),
-          isUser: false,
-          timestamp: timestamp,
-          type: ChatMessageType.text,
-        );
-      }
-
-      // Check if it's a bus-related query
+      // Check if it's a bus-related query first
       if (_isBusRelated(normalizedMessage)) {
         return await _handleBusQuery(userMessage, messageId, timestamp);
       }
 
-      // Default response for unrecognized queries
-      return ChatMessage(
-        id: messageId,
-        content:
-            'I\'m specialized in helping with bus schedules and transportation. Try asking me about:\n• Bus routes between cities\n• Departure times\n• Bus types\n\nFor example: "Show me buses from Colombo to Kandy"',
-        isUser: false,
-        timestamp: timestamp,
-        type: ChatMessageType.text,
-      );
+      // For general questions, use AI
+      return await _getAIResponse(userMessage, messageId, timestamp);
     } catch (e) {
       return ChatMessage(
         id: messageId,
@@ -151,16 +79,92 @@ class ChatbotService {
     }
   }
 
+  // AI Response Generation using the new AI service
+  static Future<ChatMessage> _getAIResponse(
+    String userMessage,
+    String messageId,
+    DateTime timestamp,
+  ) async {
+    try {
+      // Try to get AI response
+      String? aiResponse = await AIService.getAIResponse(userMessage);
+
+      // If AI fails, use fallback
+      if (aiResponse == null || aiResponse.trim().isEmpty) {
+        aiResponse = _getFallbackResponse(userMessage);
+      }
+
+      return ChatMessage(
+        id: messageId,
+        content: aiResponse,
+        isUser: false,
+        timestamp: timestamp,
+        type: ChatMessageType.text,
+      );
+    } catch (e) {
+      return ChatMessage(
+        id: messageId,
+        content: _getFallbackResponse(userMessage),
+        isUser: false,
+        timestamp: timestamp,
+        type: ChatMessageType.text,
+      );
+    }
+  }
+
+  // Fallback response system
+  static String _getFallbackResponse(String message) {
+    final normalizedMessage = message.toLowerCase();
+
+    if (_isGreeting(normalizedMessage)) {
+      return _getRandomResponse([
+        'Hello! How can I help you with your travel plans today?',
+        'Hi there! I\'m here to assist with bus schedules and routes.',
+        'Welcome! What transportation information do you need?',
+      ]);
+    }
+
+    if (_isThanks(normalizedMessage)) {
+      return _getRandomResponse([
+        'You\'re welcome! Have a safe journey!',
+        'Happy to help! Safe travels!',
+        'Glad I could assist! Enjoy your trip!',
+      ]);
+    }
+
+    if (_isGoodbye(normalizedMessage)) {
+      return _getRandomResponse([
+        'Goodbye! Have a great day and safe travels!',
+        'See you later! Don\'t hesitate to ask if you need more help.',
+        'Take care! Have a wonderful journey!',
+      ]);
+    }
+
+    // Default intelligent response
+    return '''I'm here to help with transportation questions! I can assist you with:
+
+🚌 Bus schedules and routes
+🕐 Departure and arrival times  
+📍 Travel planning between cities
+❓ General transportation questions
+
+Try asking me something like:
+• "Show me buses from Colombo to Kandy"
+• "What time do express buses leave?"
+• "Help me plan a trip to Galle"
+
+What would you like to know?''';
+  }
+
+  // Bus query handling (existing functionality)
   static Future<ChatMessage> _handleBusQuery(
     String userMessage,
     String messageId,
     DateTime timestamp,
   ) async {
     try {
-      // Extract locations from the message
       final extractedInfo = _extractBusInfo(userMessage);
 
-      // Search for bus schedules
       final response = await ApiService.getBusTimeTable(
         from: extractedInfo['from'],
         to: extractedInfo['to'],
@@ -217,11 +221,11 @@ class ChatbotService {
     }
   }
 
+  // Utility functions (existing)
   static Map<String, String?> _extractBusInfo(String message) {
     final normalizedMessage = message.toLowerCase();
     String? from, to, time, busType;
 
-    // Extract locations
     for (final location in _locations) {
       final locationLower = location.toLowerCase();
       if (normalizedMessage.contains(locationLower)) {
@@ -233,7 +237,6 @@ class ChatbotService {
       }
     }
 
-    // Look for "from X to Y" pattern
     final fromToPattern = RegExp(
       r'from\s+(\w+)\s+to\s+(\w+)',
       caseSensitive: false,
@@ -246,7 +249,6 @@ class ChatbotService {
       if (toCandidate != null) to = toCandidate;
     }
 
-    // Extract time
     final timePattern = RegExp(
       r'(\d{1,2}):?(\d{2})?\s*(am|pm)?',
       caseSensitive: false,
@@ -256,7 +258,6 @@ class ChatbotService {
       time = timeMatch.group(0);
     }
 
-    // Extract bus type
     for (final type in BusType.values) {
       if (normalizedMessage.contains(type.displayName.toLowerCase())) {
         busType = type.displayName;
@@ -309,7 +310,6 @@ class ChatbotService {
     buffer.writeln(
       '\n💡 Tip: You can ask me for more specific details or different routes!',
     );
-
     return buffer.toString();
   }
 
@@ -337,6 +337,7 @@ class ChatbotService {
     return buffer.toString();
   }
 
+  // Helper functions
   static bool _isGreeting(String message) {
     final greetingWords = [
       'hello',
@@ -364,18 +365,6 @@ class ChatbotService {
       'quit',
     ];
     return goodbyeWords.any((goodbye) => message.contains(goodbye));
-  }
-
-  static bool _isHelpRequest(String message) {
-    final helpWords = [
-      'help',
-      'assist',
-      'support',
-      'what can you do',
-      'how to',
-      'guide',
-    ];
-    return helpWords.any((help) => message.contains(help));
   }
 
   static bool _isBusRelated(String message) {
@@ -408,6 +397,8 @@ class ChatbotService {
       'Express buses',
       'Help me plan a trip',
       'What can you do?',
+      'Tell me a joke',
+      'How are you?',
     ];
   }
 }
