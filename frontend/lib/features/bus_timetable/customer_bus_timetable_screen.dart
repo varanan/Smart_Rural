@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/bus_timetable.dart';
 import '../../services/api_service.dart';
+import '../../services/database_service.dart';
+import '../../services/connectivity_service.dart';
+import '../../services/sync_service.dart';
+import '../../services/offline_auth_service.dart';
 
 class CustomerBusTimeTableScreen extends StatefulWidget {
   const CustomerBusTimeTableScreen({super.key});
@@ -191,6 +195,120 @@ class _CustomerBusTimeTableScreenState
     _loadTimetables();
   }
 
+  // ===========================
+  // NEW: Show offline status dialog
+  // ===========================
+  Future<void> _showOfflineStatus() async {
+    final isOnline = await ConnectivityService().isConnected();
+    final cachedCount = await DatabaseService.instance.getCachedTimetablesCount();
+    final lastSync = await SyncService.instance.getLastSyncTime();
+    
+    String lastSyncText = 'Never';
+    if (lastSync != null) {
+      final difference = DateTime.now().difference(lastSync);
+      if (difference.inMinutes < 1) {
+        lastSyncText = 'Just now';
+      } else if (difference.inHours < 1) {
+        lastSyncText = '${difference.inMinutes} minutes ago';
+      } else if (difference.inDays < 1) {
+        lastSyncText = '${difference.inHours} hours ago';
+      } else {
+        lastSyncText = '${difference.inDays} days ago';
+      }
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                isOnline ? Icons.wifi : Icons.wifi_off,
+                color: isOnline ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              const Text('Offline Status'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatusRow(
+                'Connection Status',
+                isOnline ? 'Online' : 'Offline',
+                isOnline ? Colors.green : Colors.orange,
+              ),
+              const Divider(),
+              _buildStatusRow(
+                'Cached Schedules',
+                '$cachedCount routes',
+                Colors.blue,
+              ),
+              const Divider(),
+              _buildStatusRow(
+                'Last Sync',
+                lastSyncText,
+                Colors.grey,
+              ),
+            ],
+          ),
+          actions: [
+            if (isOnline)
+              TextButton.icon(
+                icon: const Icon(Icons.sync),
+                label: const Text('Sync Now'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final success = await SyncService.instance.syncData();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'Data synced successfully!'
+                              : 'Sync failed. Please try again.',
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                    _loadTimetables(); // Reload data
+                  }
+                },
+              ),
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildStatusRow(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLoginPrompt() {
     showModalBottomSheet(
       context: context,
@@ -275,6 +393,14 @@ class _CustomerBusTimeTableScreenState
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // ✅ Info button to show offline status
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showOfflineStatus,
+            tooltip: 'Offline Status',
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showLoginPrompt,
