@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Add these imports 👇
+import '../services/database_service.dart';
+import '../services/connectivity_service.dart';
+
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:3000/api';
   // For Android emulator use: 'http://10.0.2.2:3000/api'
@@ -50,7 +54,9 @@ class ApiService {
     }
   }
 
-  // Admin Authentication
+  // ===========================
+  // ADMIN AUTHENTICATION
+  // ===========================
   static Future<Map<String, dynamic>> adminRegister({
     required String name,
     required String email,
@@ -71,7 +77,6 @@ class ApiService {
 
       final result = await _handleResponse(response);
 
-      // Store tokens
       if (result['success'] == true && result['data'] != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', result['data']['accessToken']);
@@ -88,12 +93,6 @@ class ApiService {
       throw ApiException(
         message:
             'Cannot connect to server. Please check if the backend is running.',
-        statusCode: 0,
-        errors: null,
-      );
-    } on HttpException {
-      throw ApiException(
-        message: 'HTTP error occurred',
         statusCode: 0,
         errors: null,
       );
@@ -121,7 +120,6 @@ class ApiService {
 
       final result = await _handleResponse(response);
 
-      // Store tokens
       if (result['success'] == true && result['data'] != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', result['data']['accessToken']);
@@ -138,12 +136,6 @@ class ApiService {
       throw ApiException(
         message:
             'Cannot connect to server. Please check if the backend is running.',
-        statusCode: 0,
-        errors: null,
-      );
-    } on HttpException {
-      throw ApiException(
-        message: 'HTTP error occurred',
         statusCode: 0,
         errors: null,
       );
@@ -182,7 +174,9 @@ class ApiService {
     }
   }
 
-  // Bus TimeTable Operations
+  // ===========================
+  // BUS TIMETABLE (OFFLINE SUPPORT)
+  // ===========================
   static Future<Map<String, dynamic>> getBusTimeTable({
     String? from,
     String? to,
@@ -190,39 +184,90 @@ class ApiService {
     String? endTime,
     String? busType,
   }) async {
+    final connectivityService = ConnectivityService();
+    final isOnline = await connectivityService.isConnected();
+
     try {
-      var url = Uri.parse('$baseUrl/bus-timetable');
+      if (isOnline) {
+        var url = Uri.parse('$baseUrl/bus-timetable');
 
-      // Add query parameters
-      final queryParams = <String, String>{};
-      if (from != null && from.isNotEmpty) queryParams['from'] = from;
-      if (to != null && to.isNotEmpty) queryParams['to'] = to;
-      if (startTime != null && startTime.isNotEmpty) {
-        queryParams['startTime'] = startTime;
-      }
-      if (endTime != null && endTime.isNotEmpty) {
-        queryParams['endTime'] = endTime;
-      }
-      if (busType != null && busType.isNotEmpty) {
-        queryParams['busType'] = busType;
-      }
+        final queryParams = <String, String>{};
+        if (from != null && from.isNotEmpty) queryParams['from'] = from;
+        if (to != null && to.isNotEmpty) queryParams['to'] = to;
+        if (startTime != null && startTime.isNotEmpty) {
+          queryParams['startTime'] = startTime;
+        }
+        if (endTime != null && endTime.isNotEmpty) {
+          queryParams['endTime'] = endTime;
+        }
+        if (busType != null && busType.isNotEmpty) {
+          queryParams['busType'] = busType;
+        }
 
-      if (queryParams.isNotEmpty) {
-        url = url.replace(queryParameters: queryParams);
+        if (queryParams.isNotEmpty) {
+          url = url.replace(queryParameters: queryParams);
+        }
+
+        final response = await http
+            .get(url, headers: await _getHeaders(includeAuth: true))
+            .timeout(const Duration(seconds: 10));
+
+        final result = await _handleResponse(response);
+
+        if (result['success'] == true && result['data'] != null) {
+          await DatabaseService.instance.saveBusTimetables(
+            List<Map<String, dynamic>>.from(result['data']),
+          );
+        }
+
+        return result;
+      } else {
+        final localData = await DatabaseService.instance.getBusTimetables(
+          from: from,
+          to: to,
+          startTime: startTime,
+          busType: busType,
+        );
+
+        return {
+          'success': true,
+          'message': 'Data loaded from offline storage',
+          'data': localData.map((item) => {
+                '_id': item['id'],
+                'from': item['from_location'],
+                'to': item['to_location'],
+                'startTime': item['start_time'],
+                'endTime': item['end_time'],
+                'busType': item['bus_type'],
+                'createdAt': item['created_at'],
+                'updatedAt': item['updated_at'],
+              }).toList(),
+          'offline': true,
+        };
       }
-
-      final response = await http
-          .get(url, headers: await _getHeaders(includeAuth: true))
-          .timeout(const Duration(seconds: 10));
-
-      return await _handleResponse(response);
     } on SocketException {
-      throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
-        statusCode: 0,
-        errors: null,
+      final localData = await DatabaseService.instance.getBusTimetables(
+        from: from,
+        to: to,
+        startTime: startTime,
+        busType: busType,
       );
+
+      return {
+        'success': true,
+        'message': 'Cannot connect to server. Showing offline data.',
+        'data': localData.map((item) => {
+              '_id': item['id'],
+              'from': item['from_location'],
+              'to': item['to_location'],
+              'startTime': item['start_time'],
+              'endTime': item['end_time'],
+              'busType': item['bus_type'],
+              'createdAt': item['created_at'],
+              'updatedAt': item['updated_at'],
+            }).toList(),
+        'offline': true,
+      };
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
@@ -251,18 +296,13 @@ class ApiService {
       };
 
       final response = await http
-          .post(
-            url,
-            headers: await _getHeaders(includeAuth: true),
-            body: json.encode(body),
-          )
+          .post(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
+        message: 'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -295,18 +335,13 @@ class ApiService {
       };
 
       final response = await http
-          .put(
-            url,
-            headers: await _getHeaders(includeAuth: true),
-            body: json.encode(body),
-          )
+          .put(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
+        message: 'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -331,8 +366,7 @@ class ApiService {
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
+        message: 'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );

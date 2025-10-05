@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
 import '../../core/auth_api.dart';
+import '../../services/connectivity_service.dart';
+import '../../services/offline_auth_service.dart';
 
 class PassengerLoginScreen extends StatefulWidget {
   const PassengerLoginScreen({super.key});
@@ -33,6 +35,22 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
     if (form == null) return;
     if (!form.validate()) return;
 
+    // Check connectivity first
+    final connectivityService = ConnectivityService();
+    final isOnline = await connectivityService.isConnected();
+    
+    if (!isOnline) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No internet connection. Please connect to login or use offline mode.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       final data = await _api.login(
@@ -60,6 +78,12 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _continueOffline() async {
+    await OfflineAuthService.enableOfflineMode();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/customer-bus-timetable');
   }
 
   @override
@@ -151,6 +175,21 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
                           loading: _loading,
                           onPressed: _loading ? null : _onLogin,
                         ),
+                        const SizedBox(height: 12),
+                        
+                        // NEW: Offline Access Button
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.wifi_off),
+                          label: const Text('Browse Offline'),
+                          onPressed: _continueOffline,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 48),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        
                         const SizedBox(height: 8),
                         Align(
                           alignment: Alignment.centerLeft,

@@ -51,6 +51,60 @@ class RoleSelectScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              
+              const SizedBox(height: 32),
+              
+              // Divider
+              const Divider(thickness: 1),
+              
+              const SizedBox(height: 16),
+              
+              // Guest Browse Button - Made more prominent
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      'Or browse without logging in:',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.search),
+                        label: const Text(
+                          'Browse Bus Schedules',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        onPressed: () => Navigator.pushNamed(context, '/customer-bus-timetable'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No login required',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
             ],
           ),
         ),
