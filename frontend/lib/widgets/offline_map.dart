@@ -6,19 +6,13 @@ class OfflineMapWidget extends StatelessWidget {
   final LatLng center;
   final List<LatLng>? routePoints;
 
-  const OfflineMapWidget({
-    Key? key,
-    required this.center,
-    this.routePoints,
-  }) : super(key: key);
+  const OfflineMapWidget({Key? key, required this.center, this.routePoints})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
-      options: MapOptions(
-        center: center,
-        zoom: 10.0,
-      ),
+      options: MapOptions(center: center, zoom: 10.0),
       children: [
         // OpenStreetMap tile layer (cached automatically by flutter_map)
         TileLayer(
@@ -28,7 +22,7 @@ class OfflineMapWidget extends StatelessWidget {
           maxZoom: 19,
           // Tiles are cached by default in flutter_map
         ),
-        
+
         // Route polyline if points provided
         if (routePoints != null && routePoints!.isNotEmpty)
           PolylineLayer(
@@ -40,13 +34,15 @@ class OfflineMapWidget extends StatelessWidget {
               ),
             ],
           ),
-        
+
         // Markers
         MarkerLayer(
           markers: [
             Marker(
+              width: 40,
+              height: 40,
               point: center,
-              builder: (ctx) => const Icon(
+              child: const Icon(
                 Icons.location_pin,
                 color: Colors.red,
                 size: 40,
