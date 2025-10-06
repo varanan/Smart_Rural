@@ -14,6 +14,12 @@ import 'features/bus_timetable/bus_timetable_screen.dart';
 import 'features/bus_timetable/customer_bus_timetable_screen.dart';
 import 'features/dashboard/passenger_dashboard.dart';
 import 'features/chatbot/chatbot_screen.dart';
+import 'features/reviews/my_reviews_screen.dart';
+import 'features/reviews/all_reviews_screen.dart';
+import 'features/reviews/review_form_screen.dart';
+import 'models/bus_timetable.dart';
+import 'dart:convert';
+import 'features/reviews/bus_reviews_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +64,25 @@ class MyApp extends StatelessWidget {
         '/customer-bus-timetable': (context) =>
             const CustomerBusTimeTableScreen(), // Customer view
         '/chatbot': (context) => const ChatbotScreen(), // AI Chatbot
+        '/my-reviews': (context) => const MyReviewsScreen(),
+        '/all-reviews': (context) => const AllReviewsScreen(),
+        '/admin-reviews': (context) => const AllReviewsScreen(isAdmin: true),
+        '/write-review': (context) {
+          final bus = ModalRoute.of(context)?.settings.arguments as BusTimeTable?;
+          if (bus == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: No bus data')),
+            );
+          }
+          return ReviewFormScreen(bus: bus);
+        },
+        '/bus-reviews': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          return BusReviewsScreen(
+            busId: args?['busId'] ?? '',
+            busInfo: args?['busInfo'],
+          );
+        },
       },
     );
   }
@@ -111,6 +136,17 @@ class _DriverHomePlaceholder extends StatelessWidget {
                     label: const Text('AI Assistant'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/all-reviews'),
+                    icon: const Icon(Icons.rate_review),
+                    label: const Text('View Reviews'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 48),
                     ),
@@ -220,6 +256,17 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
                       minimumSize: const Size(double.infinity, 48),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/admin-reviews'),
+                    icon: const Icon(Icons.rate_review),
+                    label: const Text('View Reviews'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -278,6 +325,17 @@ class _ConnectorPanelPlaceholder extends StatelessWidget {
                     label: const Text('AI Assistant'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/all-reviews'),
+                    icon: const Icon(Icons.rate_review),
+                    label: const Text('View Reviews'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 48),
                     ),
