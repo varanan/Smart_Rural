@@ -174,8 +174,9 @@ class ChatbotService {
 Try asking me something like:
 • "Show me buses from Colombo to Kandy"
 • "What time do express buses leave?"
-• "How do I write a review?"
-• "Show me reviews for buses"
+• "Show me my best reviews"
+• "Give me the highest rated reviews"
+• "Show my recent reviews"
 
 What would you like to know?''';
   }
@@ -188,6 +189,26 @@ What would you like to know?''';
   ) async {
     try {
       final normalizedMessage = userMessage.toLowerCase();
+
+      // ✅ NEW: Check if asking for best/top reviews
+      if (_isAboutBestReviews(normalizedMessage)) {
+        return await _fetchAndDisplayBestReviews(messageId, timestamp, 'best');
+      }
+
+      // ✅ NEW: Check if asking for worst/lowest reviews
+      if (_isAboutWorstReviews(normalizedMessage)) {
+        return await _fetchAndDisplayBestReviews(messageId, timestamp, 'worst');
+      }
+
+      // ✅ NEW: Check if asking for recent reviews
+      if (_isAboutRecentReviews(normalizedMessage)) {
+        return await _fetchAndDisplayBestReviews(messageId, timestamp, 'recent');
+      }
+
+      // ✅ NEW: Check if asking for all reviews
+      if (_isAboutAllReviews(normalizedMessage)) {
+        return await _fetchAndDisplayBestReviews(messageId, timestamp, 'all');
+      }
 
       // Check what kind of review query it is
       if (_isAboutWritingReview(normalizedMessage)) {
@@ -338,6 +359,187 @@ Need help with something specific about reviews?''',
         timestamp: timestamp,
         type: ChatMessageType.error,
       );
+    }
+  }
+
+  // ✅ NEW: Fetch and display reviews based on filter
+  static Future<ChatMessage> _fetchAndDisplayBestReviews(
+    String messageId,
+    DateTime timestamp,
+    String filterType,
+  ) async {
+    try {
+      // Fetch reviews from API
+      final reviewsData = await ApiService.getMyReviews();
+      
+      if (reviewsData.isEmpty) {
+        return ChatMessage(
+          id: messageId,
+          content: '''📝 You haven't written any reviews yet!
+
+To share your experience:
+1. Browse bus schedules
+2. Find a bus you've traveled on
+3. Click "Write Review"
+4. Rate and comment!
+
+Your feedback helps other passengers! 🚌''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+
+      // Parse reviews
+      List<Review> reviews = reviewsData
+          .map((json) => Review.fromJson(json))
+          .toList();
+
+      // Apply filtering and sorting
+      List<Review> filteredReviews = [];
+      String headerMessage = '';
+
+      switch (filterType) {
+        case 'best':
+          // Sort by rating (highest first)
+          reviews.sort((a, b) => b.rating.compareTo(a.rating));
+          // Get only 5-star reviews, or if none, get highest rated
+          filteredReviews = reviews.where((r) => r.rating == 5).toList();
+          if (filteredReviews.isEmpty && reviews.isNotEmpty) {
+            // Get top 3 highest rated
+            filteredReviews = reviews.take(3).toList();
+            headerMessage = '⭐ **Your Highest Rated Reviews:**\n\n';
+          } else {
+            headerMessage = '⭐ **Your Best Reviews (5 Stars):**\n\n';
+          }
+          break;
+
+        case 'worst':
+          // Sort by rating (lowest first)
+          reviews.sort((a, b) => a.rating.compareTo(b.rating));
+          // Get only 1-2 star reviews, or if none, get lowest rated
+          filteredReviews = reviews.where((r) => r.rating <= 2).toList();
+          if (filteredReviews.isEmpty && reviews.isNotEmpty) {
+            // Get bottom 3 lowest rated
+            filteredReviews = reviews.take(3).toList();
+            headerMessage = '⭐ **Your Lowest Rated Reviews:**\n\n';
+          } else {
+            headerMessage = '😔 **Your Critical Reviews:**\n\n';
+          }
+          break;
+
+        case 'recent':
+          // Sort by date (newest first)
+          reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          filteredReviews = reviews.take(5).toList();
+          headerMessage = '📅 **Your Recent Reviews:**\n\n';
+          break;
+
+        case 'all':
+          // Sort by rating (highest first)
+          reviews.sort((a, b) => b.rating.compareTo(a.rating));
+          filteredReviews = reviews.take(10).toList();
+          headerMessage = '📋 **All Your Reviews:**\n\n';
+          break;
+
+        default:
+          filteredReviews = reviews.take(5).toList();
+          headerMessage = '⭐ **Your Reviews:**\n\n';
+      }
+
+      if (filteredReviews.isEmpty) {
+        return ChatMessage(
+          id: messageId,
+          content: '''No reviews found matching that criteria.
+
+You have ${reviews.length} review${reviews.length > 1 ? 's' : ''} in total.
+
+Try asking:
+• "Show all my reviews"
+• "Show my recent reviews"''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+
+      // Format reviews for display
+      final formattedReviews = _formatReviewsForChat(
+        filteredReviews,
+        headerMessage,
+        reviews.length,
+      );
+
+      return ChatMessage(
+        id: messageId,
+        content: formattedReviews,
+        isUser: false,
+        timestamp: timestamp,
+        type: ChatMessageType.text,
+      );
+    } catch (e) {
+      print('Error fetching reviews: $e');
+      return ChatMessage(
+        id: messageId,
+        content: '''I'm having trouble fetching your reviews right now.
+
+Please try again or visit "My Reviews" in your dashboard to see all your reviews.''',
+        isUser: false,
+        timestamp: timestamp,
+        type: ChatMessageType.error,
+      );
+    }
+  }
+
+  // ✅ NEW: Format reviews for chat display
+  static String _formatReviewsForChat(
+    List<Review> reviews,
+    String header,
+    int totalCount,
+  ) {
+    final buffer = StringBuffer();
+    buffer.writeln(header);
+
+    for (int i = 0; i < reviews.length; i++) {
+      final review = reviews[i];
+      final stars = '⭐' * review.rating + '☆' * (5 - review.rating);
+      
+      buffer.writeln('**${i + 1}. ${review.busInfo?.from ?? 'Unknown'} → ${review.busInfo?.to ?? 'Unknown'}**');
+      buffer.writeln('   $stars (${review.rating}/5)');
+      buffer.writeln('   🚌 ${review.busInfo?.busType ?? 'Bus'}');
+      buffer.writeln('   💬 "${review.comment}"');
+      buffer.writeln('   📅 ${_formatDate(review.createdAt)}');
+      
+      if (i < reviews.length - 1) {
+        buffer.writeln();
+      }
+    }
+
+    if (reviews.length < totalCount) {
+      buffer.writeln('\n📊 Showing ${reviews.length} of $totalCount reviews.');
+    }
+
+    buffer.writeln('\n💡 **Tip:** Visit "My Reviews" to edit or delete any review!');
+
+    return buffer.toString();
+  }
+
+  // ✅ NEW: Format date nicely
+  static String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return '$weeks week${weeks > 1 ? 's' : ''} ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
     }
   }
 
@@ -580,6 +782,64 @@ Need help with something specific about reviews?''',
     return keywords.any((keyword) => message.contains(keyword));
   }
 
+  // ✅ NEW: Review filtering helper functions
+  static bool _isAboutBestReviews(String message) {
+    final keywords = [
+      'best review',
+      'best reviews',
+      'highest rated',
+      'highest rating',
+      'top review',
+      'top reviews',
+      'top rated',
+      '5 star',
+      'five star',
+      'excellent review',
+      'best feedback',
+    ];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutWorstReviews(String message) {
+    final keywords = [
+      'worst review',
+      'worst reviews',
+      'lowest rated',
+      'lowest rating',
+      'bad review',
+      'bad reviews',
+      'poor review',
+      '1 star',
+      'one star',
+      'negative review',
+    ];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutRecentReviews(String message) {
+    final keywords = [
+      'recent review',
+      'recent reviews',
+      'latest review',
+      'latest reviews',
+      'new review',
+      'new reviews',
+      'newest review',
+    ];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutAllReviews(String message) {
+    final keywords = [
+      'all review',
+      'all reviews',
+      'show all review',
+      'list all review',
+      'every review',
+    ];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
   static String _getRandomResponse(List<String> responses) {
     final random = Random();
     return responses[random.nextInt(responses.length)];
@@ -605,7 +865,8 @@ Need help with something specific about reviews?''',
       'Buses from Colombo',
       'Express buses',
       'How do I write a review?',
-      'Show my reviews',
+      'Show my best reviews',
+      'Show my recent reviews',
       'What can you do?',
       'Help me plan a trip',
     ];
