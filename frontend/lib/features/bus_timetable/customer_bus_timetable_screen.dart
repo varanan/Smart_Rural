@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/bus_timetable.dart';
 import '../../services/api_service.dart';
 import '../../services/database_service.dart';
@@ -754,6 +755,41 @@ class _CustomerBusTimeTableScreenState
                   ),
                   _buildTimeDisplay('Arrival', timetable.endTime),
                 ],
+              ),
+            ),
+            
+            // ✅ NEW: Add Review Button
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  // Check if user is logged in
+                  
+                  final prefs = await SharedPreferences.getInstance();
+                  final token = prefs.getString('access_token');
+                  if (token == null) {
+                    // Show login prompt
+                    _showLoginPrompt();
+                    return;
+                  }
+                  
+                  // Navigate to review form
+                  if (mounted) {
+                    Navigator.pushNamed(
+                      context,
+                      '/write-review',
+                      arguments: timetable,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.rate_review, size: 18),
+                label: const Text('Write Review'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFF97316),
+                  side: const BorderSide(color: Color(0xFFF97316)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           ],

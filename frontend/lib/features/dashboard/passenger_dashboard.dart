@@ -177,6 +177,13 @@ class _DashboardHome extends StatelessWidget {
                     );
                   },
                 ),
+                _buildActionCard(
+                  context,
+                  'My Reviews',
+                  Icons.rate_review,
+                  'View and manage your bus reviews',
+                  () => Navigator.pushNamed(context, '/my-reviews'),
+                ),
               ],
             ),
 

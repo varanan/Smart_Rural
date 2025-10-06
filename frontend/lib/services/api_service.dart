@@ -29,6 +29,11 @@ class ApiService {
     return headers;
   }
 
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
   static Future<Map<String, dynamic>> _handleResponse(
     http.Response response,
   ) async {
@@ -377,6 +382,136 @@ class ApiService {
         statusCode: 0,
         errors: null,
       );
+    }
+  }
+
+  // =====================
+  // Review APIs
+  // =====================
+  
+  static Future<Map<String, dynamic>> createReview({
+    required String busId,
+    required int rating,
+    required String comment,
+  }) async {
+    final url = Uri.parse('$baseUrl/reviews');
+    final token = await _getToken();
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'busId': busId,
+        'rating': rating,
+        'comment': comment,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 201 && data['success'] == true) {
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Failed to create review');
+    }
+  }
+
+  static Future<List<dynamic>> getMyReviews() async {
+    final url = Uri.parse('$baseUrl/reviews/my-reviews');
+    final token = await _getToken();
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] ?? [];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to fetch reviews');
+    }
+  }
+
+  static Future<List<dynamic>> getReviewsByBus(String busId) async {
+    final url = Uri.parse('$baseUrl/reviews/bus/$busId');
+
+    final response = await http.get(url);
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] ?? [];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to fetch reviews');
+    }
+  }
+
+  static Future<List<dynamic>> getAllReviews() async {
+    final url = Uri.parse('$baseUrl/reviews');
+    final token = await _getToken();
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] ?? [];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to fetch reviews');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateReview({
+    required String reviewId,
+    int? rating,
+    String? comment,
+  }) async {
+    final url = Uri.parse('$baseUrl/reviews/$reviewId');
+    final token = await _getToken();
+
+    final body = <String, dynamic>{};
+    if (rating != null) body['rating'] = rating;
+    if (comment != null) body['comment'] = comment;
+
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Failed to update review');
+    }
+  }
+
+  static Future<void> deleteReview(String reviewId) async {
+    final url = Uri.parse('$baseUrl/reviews/$reviewId');
+    final token = await _getToken();
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Failed to delete review');
     }
   }
 
