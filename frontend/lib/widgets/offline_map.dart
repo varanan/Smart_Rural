@@ -45,8 +45,10 @@ class OfflineMapWidget extends StatelessWidget {
         MarkerLayer(
           markers: [
             Marker(
+              width: 40,
+              height: 40,
               point: center,
-              builder: (ctx) => const Icon(
+              child: const Icon(
                 Icons.location_pin,
                 color: Colors.red,
                 size: 40,
