@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/bus_timetable.dart';
 import '../../services/api_service.dart';
+import '../../services/database_service.dart';
+import '../../services/connectivity_service.dart';
+import '../../services/sync_service.dart';
+import '../../services/offline_auth_service.dart';
 
 class CustomerBusTimeTableScreen extends StatefulWidget {
   const CustomerBusTimeTableScreen({super.key});
@@ -76,6 +80,9 @@ class _CustomerBusTimeTableScreenState
     super.dispose();
   }
 
+  // ===========================
+  // LOAD TIMETABLES (with offline indicator)
+  // ===========================
   Future<void> _loadTimetables() async {
     setState(() => _isLoading = true);
     try {
@@ -83,10 +90,26 @@ class _CustomerBusTimeTableScreenState
       if (response['success'] == true && response['data'] != null) {
         final List<dynamic> data = response['data'];
         setState(() {
-          _filteredTimetables = data
-              .map((json) => BusTimeTable.fromJson(json))
-              .toList();
+          _filteredTimetables =
+              data.map((json) => BusTimeTable.fromJson(json)).toList();
         });
+
+        // ✅ Show offline indicator if data is from local DB
+        if (response['offline'] == true && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.wifi_off, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Showing offline data'),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -102,6 +125,9 @@ class _CustomerBusTimeTableScreenState
     }
   }
 
+  // ===========================
+  // SEARCH
+  // ===========================
   void _searchTimetables() {
     setState(() => _isLoading = true);
 
@@ -125,10 +151,26 @@ class _CustomerBusTimeTableScreenState
         if (response['success'] == true && response['data'] != null) {
           final List<dynamic> data = response['data'];
           setState(() {
-            _filteredTimetables = data
-                .map((json) => BusTimeTable.fromJson(json))
-                .toList();
+            _filteredTimetables =
+                data.map((json) => BusTimeTable.fromJson(json)).toList();
           });
+
+          // ✅ Offline status during search
+          if (response['offline'] == true && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.wifi_off, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Showing offline data'),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -153,6 +195,195 @@ class _CustomerBusTimeTableScreenState
     _loadTimetables();
   }
 
+  // ===========================
+  // NEW: Show offline status dialog
+  // ===========================
+  Future<void> _showOfflineStatus() async {
+    final isOnline = await ConnectivityService().isConnected();
+    final cachedCount = await DatabaseService.instance.getCachedTimetablesCount();
+    final lastSync = await SyncService.instance.getLastSyncTime();
+    
+    String lastSyncText = 'Never';
+    if (lastSync != null) {
+      final difference = DateTime.now().difference(lastSync);
+      if (difference.inMinutes < 1) {
+        lastSyncText = 'Just now';
+      } else if (difference.inHours < 1) {
+        lastSyncText = '${difference.inMinutes} minutes ago';
+      } else if (difference.inDays < 1) {
+        lastSyncText = '${difference.inHours} hours ago';
+      } else {
+        lastSyncText = '${difference.inDays} days ago';
+      }
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                isOnline ? Icons.wifi : Icons.wifi_off,
+                color: isOnline ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              const Text('Offline Status'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatusRow(
+                'Connection Status',
+                isOnline ? 'Online' : 'Offline',
+                isOnline ? Colors.green : Colors.orange,
+              ),
+              const Divider(),
+              _buildStatusRow(
+                'Cached Schedules',
+                '$cachedCount routes',
+                Colors.blue,
+              ),
+              const Divider(),
+              _buildStatusRow(
+                'Last Sync',
+                lastSyncText,
+                Colors.grey,
+              ),
+            ],
+          ),
+          actions: [
+            if (isOnline)
+              TextButton.icon(
+                icon: const Icon(Icons.sync),
+                label: const Text('Sync Now'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final success = await SyncService.instance.syncData();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'Data synced successfully!'
+                              : 'Sync failed. Please try again.',
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                    _loadTimetables(); // Reload data
+                  }
+                },
+              ),
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildStatusRow(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLoginPrompt() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: 64,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Get More Features',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Login to access personalized features, save favorite routes, and get real-time updates',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.grey),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text('Continue as Guest'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/auth/passenger/login');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text('Login'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================
+  // UI
+  // ===========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,10 +393,25 @@ class _CustomerBusTimeTableScreenState
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // ✅ Info button to show offline status
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showOfflineStatus,
+            tooltip: 'Offline Status',
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showLoginPrompt,
+        icon: Icon(Icons.person),
+        label: Text('Login'),
+        backgroundColor: const Color(0xFFF97316),
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
-          // Search Section
+          // 🔍 Search Section
           Container(
             color: const Color(0xFF0F172A),
             padding: const EdgeInsets.all(16),
@@ -182,7 +428,7 @@ class _CustomerBusTimeTableScreenState
                 ),
                 const SizedBox(height: 16),
 
-                // From and To
+                // From & To Dropdowns
                 Row(
                   children: [
                     Expanded(
@@ -206,7 +452,7 @@ class _CustomerBusTimeTableScreenState
                 ),
                 const SizedBox(height: 12),
 
-                // Time and Bus Type
+                // Time & Type Dropdowns
                 Row(
                   children: [
                     Expanded(
@@ -230,7 +476,7 @@ class _CustomerBusTimeTableScreenState
                 ),
                 const SizedBox(height: 16),
 
-                // Search Buttons
+                // Buttons
                 Row(
                   children: [
                     Expanded(
@@ -284,7 +530,7 @@ class _CustomerBusTimeTableScreenState
             ),
           ),
 
-          // Results Section
+          // 🚌 Results Section
           Expanded(
             child: Container(
               color: const Color(0xFF1E293B),
@@ -294,9 +540,8 @@ class _CustomerBusTimeTableScreenState
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFF97316),
-                            ),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -307,40 +552,38 @@ class _CustomerBusTimeTableScreenState
                       ),
                     )
                   : _filteredTimetables.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.directions_bus_outlined,
-                            size: 80,
-                            color: Colors.grey,
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.directions_bus_outlined,
+                                  size: 80, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'No buses found',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Try different search criteria',
+                                style:
+                                    TextStyle(color: Colors.grey, fontSize: 16),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No buses found',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Try different search criteria',
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _filteredTimetables.length,
-                      itemBuilder: (context, index) {
-                        final timetable = _filteredTimetables[index];
-                        return _buildSimpleTimetableCard(timetable);
-                      },
-                    ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredTimetables.length,
+                          itemBuilder: (context, index) {
+                            final timetable = _filteredTimetables[index];
+                            return _buildSimpleTimetableCard(timetable);
+                          },
+                        ),
             ),
           ),
         ],
@@ -378,10 +621,8 @@ class _CustomerBusTimeTableScreenState
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
           dropdownColor: const Color(0xFF374151),
           style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -393,10 +634,8 @@ class _CustomerBusTimeTableScreenState
             ...options.map(
               (option) => DropdownMenuItem<String>(
                 value: option,
-                child: Text(
-                  option,
-                  style: const TextStyle(color: Colors.white),
-                ),
+                child: Text(option,
+                    style: const TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -418,14 +657,12 @@ class _CustomerBusTimeTableScreenState
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Bus Type Badge
+            // Bus Type
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getBusTypeColor(timetable.busType),
                     borderRadius: BorderRadius.circular(4),
@@ -443,23 +680,19 @@ class _CustomerBusTimeTableScreenState
             ),
             const SizedBox(height: 16),
 
-            // Route Information
+            // Route Info
             Row(
               children: [
-                // From
                 Expanded(
                   flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'FROM',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      const Text('FROM',
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
                       const SizedBox(height: 4),
                       Text(
                         timetable.from,
@@ -472,34 +705,20 @@ class _CustomerBusTimeTableScreenState
                     ],
                   ),
                 ),
-
-                // Arrow
                 const Expanded(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.arrow_forward,
-                        color: Color(0xFFF97316),
-                        size: 24,
-                      ),
-                    ],
-                  ),
+                  child: Icon(Icons.arrow_forward,
+                      color: Color(0xFFF97316), size: 24),
                 ),
-
-                // To
                 Expanded(
                   flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
-                        'TO',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      const Text('TO',
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
                       const SizedBox(height: 4),
                       Text(
                         timetable.to,
@@ -517,7 +736,7 @@ class _CustomerBusTimeTableScreenState
 
             const SizedBox(height: 20),
 
-            // Time Information
+            // Time Info
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -546,14 +765,11 @@ class _CustomerBusTimeTableScreenState
   Widget _buildTimeDisplay(String label, String time) {
     return Column(
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
         Text(
           time,

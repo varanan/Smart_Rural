@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'services/sync_service.dart';
+import 'features/auth/splash_screen.dart';
 import 'features/auth/role_select_screen.dart';
 import 'features/auth/driver_login_screen.dart';
 import 'features/auth/passenger_login_screen.dart';
@@ -11,7 +13,12 @@ import 'features/auth/connector_register_screen.dart';
 import 'features/bus_timetable/bus_timetable_screen.dart';
 import 'features/bus_timetable/customer_bus_timetable_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize background sync
+  SyncService.instance.startAutoSync();
+  
   runApp(const MyApp());
 }
 
@@ -27,8 +34,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB)),
         useMaterial3: true,
       ),
-      initialRoute: '/',
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/': (context) => const RoleSelectScreen(),
         '/auth/driver/login': (context) => const DriverLoginScreen(),
         '/auth/driver/register': (context) => const DriverRegisterScreen(),

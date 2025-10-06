@@ -33,7 +33,14 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.1.0
   shared_preferences: ^2.2.2
-  # Add other existing dependencies here
+  # NEW: Add these packages for offline functionality
+  sqflite: ^2.3.0  # Local database
+  path: ^1.8.3  # File path handling
+  connectivity_plus: ^5.0.2  # Check internet connection
+  flutter_map: ^6.1.0  # For offline maps
+  latlong2: ^0.9.0  # For map coordinates
+  path_provider: ^2.1.1  # Access device storage
+  dio: ^5.4.0  # Better HTTP client for downloading map tiles
 
 dev_dependencies:
   flutter_test:
