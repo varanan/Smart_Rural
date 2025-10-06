@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import '../models/chat_message.dart';
 import '../models/bus_timetable.dart';
+import '../models/review.dart';
 import 'api_service.dart';
 import 'ai_service.dart';
 
@@ -34,6 +35,22 @@ class ChatbotService {
     'semi-luxury',
   ];
 
+  // ✅ ADD: Review-related keywords
+  static final List<String> _reviewRelatedKeywords = [
+    'review',
+    'reviews',
+    'rating',
+    'ratings',
+    'feedback',
+    'comment',
+    'comments',
+    'opinion',
+    'star',
+    'stars',
+    'rate',
+    'rated',
+  ];
+
   static final List<String> _locations = [
     'Colombo',
     'Kandy',
@@ -59,6 +76,11 @@ class ChatbotService {
 
     try {
       final normalizedMessage = userMessage.toLowerCase().trim();
+
+      // ✅ ADD: Check if it's a review-related query
+      if (_isReviewRelated(normalizedMessage)) {
+        return await _handleReviewQuery(userMessage, messageId, timestamp);
+      }
 
       // Check if it's a bus-related query first
       if (_isBusRelated(normalizedMessage)) {
@@ -146,14 +168,177 @@ class ChatbotService {
 🚌 Bus schedules and routes
 🕐 Departure and arrival times  
 📍 Travel planning between cities
+⭐ Bus reviews and ratings
 ❓ General transportation questions
 
 Try asking me something like:
 • "Show me buses from Colombo to Kandy"
 • "What time do express buses leave?"
-• "Help me plan a trip to Galle"
+• "How do I write a review?"
+• "Show me reviews for buses"
 
 What would you like to know?''';
+  }
+
+  // ✅ ADD: Review query handling
+  static Future<ChatMessage> _handleReviewQuery(
+    String userMessage,
+    String messageId,
+    DateTime timestamp,
+  ) async {
+    try {
+      final normalizedMessage = userMessage.toLowerCase();
+
+      // Check what kind of review query it is
+      if (_isAboutWritingReview(normalizedMessage)) {
+        return ChatMessage(
+          id: messageId,
+          content: '''📝 **How to Write a Review:**
+
+1. Navigate to "My Reviews" from your dashboard
+2. Or view bus schedules and click "Write Review" on a bus
+3. Rate the bus (1-5 stars) ⭐
+4. Write your comment (at least 10 characters)
+5. Submit your review!
+
+Your reviews help other passengers make better travel choices. 🚌
+
+Would you like to see your existing reviews or browse bus schedules?''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+
+      if (_isAboutViewingReviews(normalizedMessage)) {
+        return ChatMessage(
+          id: messageId,
+          content: '''👀 **How to View Reviews:**
+
+**Your Reviews:**
+• Go to "My Reviews" from your dashboard
+• See all buses you've reviewed
+• Edit or delete your own reviews
+• Click "View All Reviews" to see what others said
+
+**All Reviews for a Bus:**
+• Browse bus schedules
+• Click "View All Reviews" on any bus
+• See ratings and comments from all passengers
+• Your reviews are highlighted with an orange border
+
+You can view others' reviews but only edit/delete your own!''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+
+      if (_isAboutEditingReview(normalizedMessage)) {
+        return ChatMessage(
+          id: messageId,
+          content: '''✏️ **How to Edit Your Review:**
+
+1. Go to "My Reviews" from your dashboard
+2. Find the review you want to edit
+3. Click the "Edit" button
+4. Update your rating or comment
+5. Save changes
+
+Note: You can only edit your own reviews, not reviews from other passengers.''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+
+      if (_isAboutDeletingReview(normalizedMessage)) {
+        return ChatMessage(
+          id: messageId,
+          content: '''🗑️ **How to Delete Your Review:**
+
+1. Go to "My Reviews" from your dashboard
+2. Find the review you want to remove
+3. Click the "Delete" button
+4. Confirm deletion
+
+Your review will be permanently removed. You can always write a new one later!''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+
+      // Try to fetch recent reviews
+      try {
+        final reviews = await ApiService.getMyReviews();
+        if (reviews.isNotEmpty) {
+          return ChatMessage(
+            id: messageId,
+            content: '''⭐ **Your Reviews:**
+
+You have ${reviews.length} review${reviews.length > 1 ? 's' : ''}.
+
+To view, edit, or delete your reviews:
+• Open "My Reviews" from your dashboard
+• Click "View All Reviews" on any review to see what others said about that bus
+
+Would you like me to help you with anything else about reviews?''',
+            isUser: false,
+            timestamp: timestamp,
+            type: ChatMessageType.text,
+          );
+        } else {
+          return ChatMessage(
+            id: messageId,
+            content: '''📝 You haven't written any reviews yet!
+
+**How to get started:**
+1. Browse bus schedules
+2. Find a bus you've traveled on
+3. Click "Write Review"
+4. Share your experience!
+
+Your feedback helps other passengers make informed decisions. 🚌''',
+            isUser: false,
+            timestamp: timestamp,
+            type: ChatMessageType.text,
+          );
+        }
+      } catch (e) {
+        // If API call fails, provide general info
+        return ChatMessage(
+          id: messageId,
+          content: '''⭐ **About Reviews:**
+
+**Write a Review:**
+• Browse bus schedules → Click "Write Review"
+• Or go to "My Reviews" from dashboard
+
+**View Reviews:**
+• "My Reviews" - See your reviews
+• "View All Reviews" on any bus - See all passenger reviews
+
+**Edit/Delete:**
+• Only possible for your own reviews
+• Go to "My Reviews" → Click Edit or Delete
+
+Need help with something specific about reviews?''',
+          isUser: false,
+          timestamp: timestamp,
+          type: ChatMessageType.text,
+        );
+      }
+    } catch (e) {
+      return ChatMessage(
+        id: messageId,
+        content:
+            'I\'m having trouble accessing review information. Please try again in a moment.',
+        isUser: false,
+        timestamp: timestamp,
+        type: ChatMessageType.error,
+      );
+    }
   }
 
   // Bus query handling (existing functionality)
@@ -371,6 +556,30 @@ What would you like to know?''';
     return _busRelatedKeywords.any((keyword) => message.contains(keyword));
   }
 
+  static bool _isReviewRelated(String message) {
+    return _reviewRelatedKeywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutWritingReview(String message) {
+    final keywords = ['write', 'create', 'add', 'submit', 'post', 'new review'];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutViewingReviews(String message) {
+    final keywords = ['view', 'see', 'show', 'read', 'check', 'browse', 'look'];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutEditingReview(String message) {
+    final keywords = ['edit', 'update', 'modify', 'change'];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
+  static bool _isAboutDeletingReview(String message) {
+    final keywords = ['delete', 'remove', 'cancel'];
+    return keywords.any((keyword) => message.contains(keyword));
+  }
+
   static String _getRandomResponse(List<String> responses) {
     final random = Random();
     return responses[random.nextInt(responses.length)];
@@ -395,10 +604,10 @@ What would you like to know?''';
       'Show all buses',
       'Buses from Colombo',
       'Express buses',
-      'Help me plan a trip',
+      'How do I write a review?',
+      'Show my reviews',
       'What can you do?',
-      'Tell me a joke',
-      'How are you?',
+      'Help me plan a trip',
     ];
   }
 }
