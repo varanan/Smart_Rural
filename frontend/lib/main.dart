@@ -18,6 +18,8 @@ import 'features/reviews/my_reviews_screen.dart';
 import 'features/reviews/all_reviews_screen.dart';
 import 'features/reviews/review_form_screen.dart';
 import 'models/bus_timetable.dart';
+import 'dart:convert';
+import 'features/reviews/bus_reviews_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +75,13 @@ class MyApp extends StatelessWidget {
             );
           }
           return ReviewFormScreen(bus: bus);
+        },
+        '/bus-reviews': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          return BusReviewsScreen(
+            busId: args?['busId'] ?? '',
+            busInfo: args?['busInfo'],
+          );
         },
       },
     );

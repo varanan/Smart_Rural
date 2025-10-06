@@ -6,6 +6,8 @@ import '../../services/database_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/offline_auth_service.dart';
+import 'dart:convert';
+import '../reviews/bus_reviews_screen.dart';
 
 class CustomerBusTimeTableScreen extends StatefulWidget {
   const CustomerBusTimeTableScreen({super.key});
@@ -788,6 +790,30 @@ class _CustomerBusTimeTableScreenState
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFF97316),
                   side: const BorderSide(color: Color(0xFFF97316)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BusReviewsScreen(
+                        busId: timetable.id ?? '',
+                        busInfo: timetable,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.star_outline, size: 18),
+                label: const Text('View All Reviews'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF60A5FA),
+                  side: const BorderSide(color: Color(0xFF60A5FA)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
