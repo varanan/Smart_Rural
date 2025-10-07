@@ -10,7 +10,8 @@ const {
   verifyDriver,
   verifyConnector,
   getAllDrivers,
-  getAllConnectors
+  getAllConnectors,
+  rejectDriver
 } = require('../controllers/admin.controllers');
 const { 
   adminRegisterSchema, 
@@ -37,7 +38,8 @@ router.get('/drivers/unverified', authenticate, getUnverifiedDrivers);
 router.get('/connectors/unverified', authenticate, getUnverifiedConnectors);
 router.get('/drivers', authenticate, getAllDrivers);
 router.get('/connectors', authenticate, getAllConnectors);
-router.put('/drivers/:id/verify', authenticate, verifyDriver);
-router.put('/connectors/:id/verify', authenticate, verifyConnector);
+router.patch('/drivers/:id/verify', authenticate, verifyDriver);
+router.patch('/drivers/:id/reject', authenticate, rejectDriver);
+router.patch('/connectors/:id/verify', authenticate, verifyConnector);
 
 module.exports = router;

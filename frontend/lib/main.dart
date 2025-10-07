@@ -108,6 +108,8 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
   bool _isVerified = false;
   bool _isLoading = true;
   String _userName = '';
+  String _verificationStatus = 'pending';
+  String? _rejectionReason;
 
   @override
   void initState() {
@@ -124,6 +126,8 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
         setState(() {
           _isVerified = userData['isVerified'] ?? false;
           _userName = userData['fullName'] ?? 'Driver';
+          _verificationStatus = userData['verificationStatus'] ?? 'pending';
+          _rejectionReason = userData['rejectionReason'];
           _isLoading = false;
         });
       } else {
@@ -172,12 +176,16 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: _isVerified
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.orange.withOpacity(0.2),
+                        color: _verificationStatus == 'rejected'
+                            ? Colors.red.withOpacity(0.2)
+                            : (_isVerified
+                                ? Colors.green.withOpacity(0.2)
+                                : Colors.orange.withOpacity(0.2)),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _isVerified ? Colors.green : Colors.orange,
+                          color: _verificationStatus == 'rejected'
+                              ? Colors.red
+                              : (_isVerified ? Colors.green : Colors.orange),
                           width: 2,
                         ),
                       ),
@@ -185,19 +193,27 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _isVerified
-                                ? Icons.verified
-                                : Icons.pending,
-                            color: _isVerified ? Colors.green : Colors.orange,
+                            _verificationStatus == 'rejected'
+                                ? Icons.cancel
+                                : (_isVerified
+                                    ? Icons.verified
+                                    : Icons.pending),
+                            color: _verificationStatus == 'rejected'
+                                ? Colors.red
+                                : (_isVerified ? Colors.green : Colors.orange),
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _isVerified
-                                ? 'Profile Verified'
-                                : 'Verification Pending',
+                            _verificationStatus == 'rejected'
+                                ? 'Profile Rejected'
+                                : (_isVerified
+                                    ? 'Profile Verified'
+                                    : 'Verification Pending'),
                             style: TextStyle(
-                              color: _isVerified ? Colors.green : Colors.orange,
+                              color: _verificationStatus == 'rejected'
+                                  ? Colors.red
+                                  : (_isVerified ? Colors.green : Colors.orange),
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -207,13 +223,56 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                     ),
                     if (!_isVerified) ...[
                       const SizedBox(height: 12),
-                      const Text(
-                        'Your profile is awaiting admin verification',
+                      Text(
+                        _verificationStatus == 'rejected'
+                            ? 'Your profile was rejected by admin'
+                            : 'Your profile is awaiting admin verification',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: _verificationStatus == 'rejected' ? Colors.red : Colors.grey,
                           fontSize: 14,
+                          fontWeight: _verificationStatus == 'rejected' 
+                              ? FontWeight.bold 
+                              : FontWeight.normal,
                         ),
                         textAlign: TextAlign.center,
+                      ),
+                    ],
+                    if (_verificationStatus == 'rejected' && _rejectionReason != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.info, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Rejection Reason:',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _rejectionReason!,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                     const SizedBox(height: 32),

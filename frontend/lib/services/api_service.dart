@@ -635,6 +635,26 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> rejectDriver(String driverId, String reason) async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers/$driverId/reject');
+      final body = {'reason': reason};
+
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to reject driver',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
   static Future<String?> getUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_role');

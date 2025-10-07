@@ -63,6 +63,15 @@ const driverSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  rejectionReason: {
+    type: String,
+    default: null
+  },
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   }
 }, {
   timestamps: true

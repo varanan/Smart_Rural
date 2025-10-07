@@ -402,6 +402,45 @@ const getAllConnectors = async (req, res, next) => {
   }
 };
 
+// Reject a driver
+const rejectDriver = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is required'
+      });
+    }
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+
+    driver.isVerified = false;
+    driver.verificationStatus = 'rejected';
+    driver.rejectionReason = reason;
+    await driver.save();
+
+    logger.info('Driver rejected', { driverId: id, adminId: req.user.id, reason });
+
+    res.json({
+      success: true,
+      message: 'Driver rejected successfully',
+      data: driver
+    });
+  } catch (error) {
+    logger.error('Failed to reject driver', { error: error.message });
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -413,5 +452,6 @@ module.exports = {
   verifyDriver,
   verifyConnector,
   getAllDrivers,
-  getAllConnectors
+  getAllConnectors,
+  rejectDriver
 };

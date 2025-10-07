@@ -117,6 +117,28 @@ class _VerifyUsersScreenState extends State<VerifyUsersScreen>
     }
   }
 
+  Future<void> _rejectDriver(String driverId, String reason) async {
+    try {
+      await ApiService.rejectDriver(driverId, reason);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Driver rejected'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _loadDrivers();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,23 +247,44 @@ class _VerifyUsersScreenState extends State<VerifyUsersScreen>
                   _buildInfoRow('NIC No.', driver['nicNumber'] ?? 'N/A'),
                   _buildInfoRow('Bus No.', driver['busNumber'] ?? 'N/A'),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showVerifyDialog(
-                        context,
-                        'Driver',
-                        driver['fullName'],
-                        () => _verifyDriver(driver['id']),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showVerifyDialog(
+                            context,
+                            'Driver',
+                            driver['fullName'],
+                            () => _verifyDriver(driver['id']),
+                          ),
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text('Verify'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
                       ),
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text('Verify Driver'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showRejectDialog(
+                            context,
+                            'Driver',
+                            driver['fullName'],
+                            driver['id'],
+                          ),
+                          icon: const Icon(Icons.cancel),
+                          label: const Text('Reject'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -429,5 +472,71 @@ class _VerifyUsersScreenState extends State<VerifyUsersScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _showRejectDialog(
+    BuildContext context,
+    String userType,
+    String userName,
+    String userId,
+  ) async {
+    final reasonController = TextEditingController();
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Reject $userType'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Rejecting $userName',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Reason for rejection:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Enter reason...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (reasonController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please provide a reason'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _rejectDriver(userId, reasonController.text);
+    }
   }
 }
