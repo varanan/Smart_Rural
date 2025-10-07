@@ -188,6 +188,7 @@ class ApiService {
     String? startTime,
     String? endTime,
     String? busType,
+    String? status,
   }) async {
     final connectivityService = ConnectivityService();
     final isOnline = await connectivityService.isConnected();
@@ -207,6 +208,9 @@ class ApiService {
         }
         if (busType != null && busType.isNotEmpty) {
           queryParams['busType'] = busType;
+        }
+        if (status != null && status.isNotEmpty) {
+          queryParams['status'] = status;
         }
 
         if (queryParams.isNotEmpty) {
@@ -644,9 +648,212 @@ class ApiService {
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
-    await prefs.remove('user_role');
-    await prefs.remove('user_data');
+        await prefs.remove('refresh_token');
+        await prefs.remove('user_role');
+        await prefs.remove('user_data');
+  }
+
+  // ===========================
+  // DRIVER SCHEDULE APIs
+  // ===========================
+  
+  static Future<Map<String, dynamic>> getDriverSchedules() async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/my-schedules');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch your schedules',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> createDriverSchedule({
+    required String from,
+    required String to,
+    required String startTime,
+    required String endTime,
+    required String busType,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/create');
+      final body = {
+        'from': from,
+        'to': to,
+        'startTime': startTime,
+        'endTime': endTime,
+        'busType': busType,
+      };
+
+      final response = await http
+          .post(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to create schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateDriverSchedule({
+    required String id,
+    required String from,
+    required String to,
+    required String startTime,
+    required String endTime,
+    required String busType,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/$id');
+      final body = {
+        'from': from,
+        'to': to,
+        'startTime': startTime,
+        'endTime': endTime,
+        'busType': busType,
+      };
+
+      final response = await http
+          .put(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to update schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteDriverSchedule(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/$id');
+
+      final response = await http
+          .delete(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to delete schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  // ===========================
+  // ADMIN SCHEDULE APPROVAL APIs
+  // ===========================
+  
+  static Future<Map<String, dynamic>> approveSchedule(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/$id/approve');
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to approve schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> rejectSchedule(String id, String reason) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/$id/reject');
+      final body = {'reason': reason};
+
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to reject schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  // ===========================
+  // NOTIFICATION APIs
+  // ===========================
+  
+  static Future<List<dynamic>> getNotifications() async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch notifications',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> markNotificationAsRead(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications/$id/read');
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to mark notification as read',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<int> getUnreadNotificationCount() async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications/unread-count');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data']['count'] ?? 0;
+    } catch (e) {
+      return 0;
+    }
   }
 }
 

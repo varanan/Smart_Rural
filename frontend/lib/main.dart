@@ -22,6 +22,10 @@ import 'features/reviews/review_form_screen.dart';
 import 'models/bus_timetable.dart';
 import 'features/reviews/bus_reviews_screen.dart';
 import 'features/admin/verify_users_screen.dart';
+// Add these imports after line 23
+import 'features/driver/driver_schedule_screen.dart';
+import 'features/driver/notifications_screen.dart';
+import 'features/admin/admin_schedule_approval_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,6 +89,9 @@ class MyApp extends StatelessWidget {
             busInfo: args?['busInfo'],
           );
         },
+        '/driver-schedules': (context) => const DriverScheduleScreen(),
+        '/driver-notifications': (context) => const NotificationsScreen(),
+        '/admin-schedule-approval': (context) => const AdminScheduleApprovalScreen(),
       },
     );
   }
@@ -217,12 +224,40 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                           ElevatedButton.icon(
                             onPressed: () => Navigator.pushNamed(
                               context,
+                              '/driver-schedules',
+                            ),
+                            icon: const Icon(Icons.schedule),
+                            label: const Text('My Schedules'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF97316),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/driver-notifications',
+                            ),
+                            icon: const Icon(Icons.notifications),
+                            label: const Text('Notifications'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
                               '/customer-bus-timetable',
                             ),
                             icon: const Icon(Icons.schedule),
                             label: const Text('View Bus Time Table'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF97316),
+                              backgroundColor: const Color(0xFF10B981),
                               foregroundColor: Colors.white,
                               minimumSize: const Size(double.infinity, 48),
                             ),
@@ -250,7 +285,7 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                             icon: const Icon(Icons.rate_review),
                             label: const Text('View Reviews'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
+                              backgroundColor: const Color(0xFF6366F1),
                               foregroundColor: Colors.white,
                               minimumSize: const Size(double.infinity, 48),
                             ),
@@ -350,6 +385,22 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
                     label: const Text('Verify Users'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF59E0B),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminScheduleApprovalScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.pending_actions),
+                    label: const Text('Approve Schedules'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 48),
                     ),
