@@ -515,6 +515,122 @@ class ApiService {
     }
   }
 
+  // ===========================
+  // ADMIN VERIFICATION APIs
+  // ===========================
+  
+  static Future<List<dynamic>> getUnverifiedDrivers() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers/unverified');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch unverified drivers',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getUnverifiedConnectors() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/connectors/unverified');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch unverified connectors',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getAllDrivers() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch drivers',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getAllConnectors() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/connectors');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch connectors',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyDriver(String driverId) async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers/$driverId/verify');
+      final response = await http
+          .put(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to verify driver',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyConnector(String connectorId) async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/connectors/$connectorId/verify');
+      final response = await http
+          .put(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to verify connector',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
   static Future<String?> getUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_role');

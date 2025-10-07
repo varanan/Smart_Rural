@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
 import '../../core/auth_api.dart';
@@ -76,11 +78,21 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
 
       final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       final driver = Map<String, dynamic>.from(data['driver'] as Map);
+      
+      // ✅ FIXED: Save token in both formats for compatibility
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Save for AuthStorage (old system)
       await AuthStorage.saveDriver(
         access: tokens['access'] as String,
         refresh: tokens['refresh'] as String,
         driver: driver,
       );
+      
+      // ✅ NEW: Also save for ApiService (review system)
+      await prefs.setString('access_token', tokens['access'] as String);
+      await prefs.setString('user_role', 'driver');
+      await prefs.setString('user_data', jsonEncode(driver));
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/driverHome');

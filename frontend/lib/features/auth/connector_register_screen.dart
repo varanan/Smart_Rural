@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
-import '../../core/auth_api.dart'; // ✅ Added
+import '../../core/auth_api.dart';
 
 class ConnectorRegisterScreen extends StatefulWidget {
   const ConnectorRegisterScreen({super.key});
@@ -82,6 +84,24 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
       // Optional: store tokens and connector user if you add storage helpers
       // final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       // final connector = Map<String, dynamic>.from(data['connector'] as Map);
+
+      // ✅ FIXED: Store tokens and connector user
+      final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
+      final connector = Map<String, dynamic>.from(data['connector'] as Map);
+      
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Save for AuthStorage (old system)
+      await AuthStorage.saveConnector(
+        access: tokens['access'] as String,
+        refresh: tokens['refresh'] as String,
+        connector: connector,
+      );
+      
+      // ✅ NEW: Also save for ApiService (review system)
+      await prefs.setString('access_token', tokens['access'] as String);
+      await prefs.setString('user_role', 'connector');
+      await prefs.setString('user_data', jsonEncode(connector));
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/connectorPanel');

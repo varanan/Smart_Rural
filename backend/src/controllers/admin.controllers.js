@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
 const Admin = require('../models/admin.model');
+const Driver = require('../models/driver.model');
+const Connector = require('../models/connector.model');
 const { signAccessToken, signRefreshToken } = require('../utils/jwt');
 const logger = require('../utils/logger');
 
@@ -270,10 +272,146 @@ const debugDatabase = async (req, res, next) => {
   }
 };
 
+// Get all unverified drivers
+const getUnverifiedDrivers = async (req, res, next) => {
+  try {
+    const drivers = await Driver.find({ isVerified: false, isActive: true })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: drivers,
+      count: drivers.length
+    });
+  } catch (error) {
+    logger.error('Failed to get unverified drivers', { error: error.message });
+    next(error);
+  }
+};
+
+// Get all unverified connectors
+const getUnverifiedConnectors = async (req, res, next) => {
+  try {
+    const connectors = await Connector.find({ isVerified: false, isActive: true })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: connectors,
+      count: connectors.length
+    });
+  } catch (error) {
+    logger.error('Failed to get unverified connectors', { error: error.message });
+    next(error);
+  }
+};
+
+// Verify a driver
+const verifyDriver = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+    
+    driver.isVerified = true;
+    await driver.save();
+    
+    logger.info('Driver verified', { driverId: id, adminId: req.user.id });
+    
+    res.json({
+      success: true,
+      message: 'Driver verified successfully',
+      data: driver
+    });
+  } catch (error) {
+    logger.error('Failed to verify driver', { error: error.message });
+    next(error);
+  }
+};
+
+// Verify a connector
+const verifyConnector = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const connector = await Connector.findById(id);
+    if (!connector) {
+      return res.status(404).json({
+        success: false,
+        message: 'Connector not found'
+      });
+    }
+    
+    connector.isVerified = true;
+    await connector.save();
+    
+    logger.info('Connector verified', { connectorId: id, adminId: req.user.id });
+    
+    res.json({
+      success: true,
+      message: 'Connector verified successfully',
+      data: connector
+    });
+  } catch (error) {
+    logger.error('Failed to verify connector', { error: error.message });
+    next(error);
+  }
+};
+
+// Get all drivers (for admin)
+const getAllDrivers = async (req, res, next) => {
+  try {
+    const drivers = await Driver.find({ isActive: true })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: drivers,
+      count: drivers.length
+    });
+  } catch (error) {
+    logger.error('Failed to get all drivers', { error: error.message });
+    next(error);
+  }
+};
+
+// Get all connectors (for admin)
+const getAllConnectors = async (req, res, next) => {
+  try {
+    const connectors = await Connector.find({ isActive: true })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: connectors,
+      count: connectors.length
+    });
+  } catch (error) {
+    logger.error('Failed to get all connectors', { error: error.message });
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
   listAllAdmins,
-  debugDatabase
+  debugDatabase,
+  getUnverifiedDrivers,
+  getUnverifiedConnectors,
+  verifyDriver,
+  verifyConnector,
+  getAllDrivers,
+  getAllConnectors
 };
