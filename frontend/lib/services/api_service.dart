@@ -237,16 +237,20 @@ class ApiService {
         return {
           'success': true,
           'message': 'Data loaded from offline storage',
-          'data': localData.map((item) => {
-                '_id': item['id'],
-                'from': item['from_location'],
-                'to': item['to_location'],
-                'startTime': item['start_time'],
-                'endTime': item['end_time'],
-                'busType': item['bus_type'],
-                'createdAt': item['created_at'],
-                'updatedAt': item['updated_at'],
-              }).toList(),
+          'data': localData
+              .map(
+                (item) => {
+                  '_id': item['id'],
+                  'from': item['from_location'],
+                  'to': item['to_location'],
+                  'startTime': item['start_time'],
+                  'endTime': item['end_time'],
+                  'busType': item['bus_type'],
+                  'createdAt': item['created_at'],
+                  'updatedAt': item['updated_at'],
+                },
+              )
+              .toList(),
           'offline': true,
         };
       }
@@ -261,16 +265,20 @@ class ApiService {
       return {
         'success': true,
         'message': 'Cannot connect to server. Showing offline data.',
-        'data': localData.map((item) => {
-              '_id': item['id'],
-              'from': item['from_location'],
-              'to': item['to_location'],
-              'startTime': item['start_time'],
-              'endTime': item['end_time'],
-              'busType': item['bus_type'],
-              'createdAt': item['created_at'],
-              'updatedAt': item['updated_at'],
-            }).toList(),
+        'data': localData
+            .map(
+              (item) => {
+                '_id': item['id'],
+                'from': item['from_location'],
+                'to': item['to_location'],
+                'startTime': item['start_time'],
+                'endTime': item['end_time'],
+                'busType': item['bus_type'],
+                'createdAt': item['created_at'],
+                'updatedAt': item['updated_at'],
+              },
+            )
+            .toList(),
         'offline': true,
       };
     } catch (e) {
@@ -301,13 +309,18 @@ class ApiService {
       };
 
       final response = await http
-          .post(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .post(
+            url,
+            headers: await _getHeaders(includeAuth: true),
+            body: json.encode(body),
+          )
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message: 'Cannot connect to server. Please check if the backend is running.',
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -340,13 +353,18 @@ class ApiService {
       };
 
       final response = await http
-          .put(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .put(
+            url,
+            headers: await _getHeaders(includeAuth: true),
+            body: json.encode(body),
+          )
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message: 'Cannot connect to server. Please check if the backend is running.',
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -371,7 +389,8 @@ class ApiService {
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message: 'Cannot connect to server. Please check if the backend is running.',
+        message:
+            'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -388,7 +407,7 @@ class ApiService {
   // =====================
   // Review APIs
   // =====================
-  
+
   static Future<Map<String, dynamic>> createReview({
     required String busId,
     required int rating,
@@ -403,11 +422,7 @@ class ApiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'busId': busId,
-        'rating': rating,
-        'comment': comment,
-      }),
+      body: jsonEncode({'busId': busId, 'rating': rating, 'comment': comment}),
     );
 
     final data = jsonDecode(response.body);
@@ -424,9 +439,7 @@ class ApiService {
 
     final response = await http.get(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
@@ -456,9 +469,7 @@ class ApiService {
 
     final response = await http.get(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
@@ -504,14 +515,161 @@ class ApiService {
 
     final response = await http.delete(
       url,
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
     if (response.statusCode != 200 || data['success'] != true) {
       throw Exception(data['message'] ?? 'Failed to delete review');
+    }
+  }
+
+  // ===========================
+  // BOOKING MANAGEMENT
+  // ===========================
+  static Future<Map<String, dynamic>> createBooking({
+    required String busId,
+    required String passengerName,
+    required String passengerPhone,
+    required int seatNumber,
+    required DateTime travelDate,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/bookings'),
+            headers: await _getHeaders(includeAuth: true),
+            body: jsonEncode({
+              'busId': busId,
+              'passengerName': passengerName,
+              'passengerPhone': passengerPhone,
+              'seatNumber': seatNumber,
+              'travelDate': travelDate.toIso8601String(),
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to create booking: ${e.toString()}',
+        'data': null,
+        'statusCode': 0,
+        'errors': null,
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getMyBookings({
+    String? status,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      var url = Uri.parse('$baseUrl/bookings/my-bookings');
+
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'limit': limit.toString(),
+      };
+
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      url = url.replace(queryParameters: queryParams);
+
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to get bookings: ${e.toString()}',
+        'data': null,
+        'statusCode': 0,
+        'errors': null,
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAvailableSeats({
+    required String busId,
+    required DateTime travelDate,
+  }) async {
+    try {
+      print('🔍 API Call - Getting available seats');
+      print('   Bus ID: $busId');
+      print('   Travel Date: $travelDate');
+      print('   Base URL: $baseUrl');
+
+      // Validate bus ID format (should be 24 character hex string)
+      if (busId.length != 24) {
+        return {
+          'success': false,
+          'message': 'Invalid bus ID format (should be 24 characters)',
+          'data': null,
+          'statusCode': 400,
+          'errors': null,
+        };
+      }
+
+      final dateString = travelDate.toIso8601String().split('T')[0];
+      print('   Date String: $dateString');
+
+      final url = Uri.parse(
+        '$baseUrl/bookings/available-seats',
+      ).replace(queryParameters: {'busId': busId, 'travelDate': dateString});
+
+      print('   Full URL: $url');
+
+      final headers = await _getHeaders(includeAuth: true);
+      print('   Headers: $headers');
+
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      print('   Response Status: ${response.statusCode}');
+      print('   Response Body: ${response.body}');
+
+      final result = await _handleResponse(response);
+      print('   Processed Result: $result');
+
+      return result;
+    } catch (e) {
+      print('💥 Exception in getAvailableSeats: $e');
+      return {
+        'success': false,
+        'message': 'Failed to get available seats: ${e.toString()}',
+        'data': null,
+        'statusCode': 0,
+        'errors': null,
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> cancelBooking(String bookingId) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl/bookings/$bookingId/cancel'),
+            headers: await _getHeaders(includeAuth: true),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to cancel booking: ${e.toString()}',
+        'data': null,
+        'statusCode': 0,
+        'errors': null,
+      };
     }
   }
 

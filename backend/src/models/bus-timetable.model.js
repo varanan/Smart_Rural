@@ -27,6 +27,19 @@ const busTimeTableSchema = new mongoose.Schema({
     enum: ['Normal', 'Express', 'Luxury', 'Semi-Luxury', 'Intercity'],
     default: 'Normal'
   },
+  totalSeats: {
+    type: Number,
+    required: [true, 'Total seats is required'],
+    min: [10, 'Bus must have at least 10 seats'],
+    max: [50, 'Bus cannot have more than 50 seats'],
+    default: 30
+  },
+  fare: {
+    type: Number,
+    required: [true, 'Fare is required'],
+    min: [0, 'Fare cannot be negative'],
+    default: 50
+  },
   isActive: {
     type: Boolean,
     default: true

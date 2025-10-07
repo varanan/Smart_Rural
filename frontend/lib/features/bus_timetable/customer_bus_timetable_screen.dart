@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/bus_timetable.dart';
+import '../../models/booking.dart';
 import '../../services/api_service.dart';
 import '../../services/database_service.dart';
 import '../../services/connectivity_service.dart';
@@ -8,6 +9,8 @@ import '../../services/sync_service.dart';
 import '../../services/offline_auth_service.dart';
 import 'dart:convert';
 import '../reviews/bus_reviews_screen.dart';
+import '../booking/seat_selection_screen.dart';
+import '../booking/my_bookings_screen.dart';
 
 class CustomerBusTimeTableScreen extends StatefulWidget {
   const CustomerBusTimeTableScreen({super.key});
@@ -93,8 +96,9 @@ class _CustomerBusTimeTableScreenState
       if (response['success'] == true && response['data'] != null) {
         final List<dynamic> data = response['data'];
         setState(() {
-          _filteredTimetables =
-              data.map((json) => BusTimeTable.fromJson(json)).toList();
+          _filteredTimetables = data
+              .map((json) => BusTimeTable.fromJson(json))
+              .toList();
         });
 
         // ✅ Show offline indicator if data is from local DB
@@ -154,8 +158,9 @@ class _CustomerBusTimeTableScreenState
         if (response['success'] == true && response['data'] != null) {
           final List<dynamic> data = response['data'];
           setState(() {
-            _filteredTimetables =
-                data.map((json) => BusTimeTable.fromJson(json)).toList();
+            _filteredTimetables = data
+                .map((json) => BusTimeTable.fromJson(json))
+                .toList();
           });
 
           // ✅ Offline status during search
@@ -203,9 +208,10 @@ class _CustomerBusTimeTableScreenState
   // ===========================
   Future<void> _showOfflineStatus() async {
     final isOnline = await ConnectivityService().isConnected();
-    final cachedCount = await DatabaseService.instance.getCachedTimetablesCount();
+    final cachedCount = await DatabaseService.instance
+        .getCachedTimetablesCount();
     final lastSync = await SyncService.instance.getLastSyncTime();
-    
+
     String lastSyncText = 'Never';
     if (lastSync != null) {
       final difference = DateTime.now().difference(lastSync);
@@ -250,11 +256,7 @@ class _CustomerBusTimeTableScreenState
                 Colors.blue,
               ),
               const Divider(),
-              _buildStatusRow(
-                'Last Sync',
-                lastSyncText,
-                Colors.grey,
-              ),
+              _buildStatusRow('Last Sync', lastSyncText, Colors.grey),
             ],
           ),
           actions: [
@@ -296,16 +298,10 @@ class _CustomerBusTimeTableScreenState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
           Text(
             value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -324,11 +320,7 @@ class _CustomerBusTimeTableScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.person_outline,
-              size: 64,
-              color: Colors.white,
-            ),
+            Icon(Icons.person_outline, size: 64, color: Colors.white),
             const SizedBox(height: 16),
             Text(
               'Get More Features',
@@ -342,10 +334,7 @@ class _CustomerBusTimeTableScreenState
             Text(
               'Login to access personalized features, save favorite routes, and get real-time updates',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 16),
             ),
             const SizedBox(height: 24),
             Row(
@@ -382,6 +371,27 @@ class _CustomerBusTimeTableScreenState
         ),
       ),
     );
+  }
+
+  void _showDatePicker(BusTimeTable bus) {
+    showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+    ).then((selectedDate) {
+      if (selectedDate != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SeatSelectionScreen(
+              busTimeTable: bus,
+              travelDate: selectedDate,
+            ),
+          ),
+        );
+      }
+    });
   }
 
   // ===========================
@@ -543,8 +553,9 @@ class _CustomerBusTimeTableScreenState
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFF97316),
+                            ),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -555,38 +566,40 @@ class _CustomerBusTimeTableScreenState
                       ),
                     )
                   : _filteredTimetables.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.directions_bus_outlined,
-                                  size: 80, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text(
-                                'No buses found',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Try different search criteria',
-                                style:
-                                    TextStyle(color: Colors.grey, fontSize: 16),
-                              ),
-                            ],
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.directions_bus_outlined,
+                            size: 80,
+                            color: Colors.grey,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredTimetables.length,
-                          itemBuilder: (context, index) {
-                            final timetable = _filteredTimetables[index];
-                            return _buildSimpleTimetableCard(timetable);
-                          },
-                        ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No buses found',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Try different search criteria',
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredTimetables.length,
+                      itemBuilder: (context, index) {
+                        final timetable = _filteredTimetables[index];
+                        return _buildSimpleTimetableCard(timetable);
+                      },
+                    ),
             ),
           ),
         ],
@@ -624,8 +637,10 @@ class _CustomerBusTimeTableScreenState
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
           dropdownColor: const Color(0xFF374151),
           style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -637,8 +652,10 @@ class _CustomerBusTimeTableScreenState
             ...options.map(
               (option) => DropdownMenuItem<String>(
                 value: option,
-                child: Text(option,
-                    style: const TextStyle(color: Colors.white)),
+                child: Text(
+                  option,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -664,8 +681,10 @@ class _CustomerBusTimeTableScreenState
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _getBusTypeColor(timetable.busType),
                     borderRadius: BorderRadius.circular(4),
@@ -691,11 +710,14 @@ class _CustomerBusTimeTableScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('FROM',
-                          style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500)),
+                      const Text(
+                        'FROM',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         timetable.from,
@@ -709,19 +731,25 @@ class _CustomerBusTimeTableScreenState
                   ),
                 ),
                 const Expanded(
-                  child: Icon(Icons.arrow_forward,
-                      color: Color(0xFFF97316), size: 24),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    color: Color(0xFFF97316),
+                    size: 24,
+                  ),
                 ),
                 Expanded(
                   flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('TO',
-                          style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500)),
+                      const Text(
+                        'TO',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         timetable.to,
@@ -759,15 +787,15 @@ class _CustomerBusTimeTableScreenState
                 ],
               ),
             ),
-            
-            // ✅ NEW: Add Review Button
+
             const SizedBox(height: 12),
+
+            // Book Seat Button
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
+              child: ElevatedButton.icon(
                 onPressed: () async {
                   // Check if user is logged in
-                  
                   final prefs = await SharedPreferences.getInstance();
                   final token = prefs.getString('access_token');
                   if (token == null) {
@@ -775,7 +803,36 @@ class _CustomerBusTimeTableScreenState
                     _showLoginPrompt();
                     return;
                   }
-                  
+
+                  // Show date picker for booking
+                  _showDatePicker(timetable);
+                },
+                icon: const Icon(Icons.event_seat, size: 18),
+                label: const Text('Book Seat'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Review Buttons
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  // Check if user is logged in
+                  final prefs = await SharedPreferences.getInstance();
+                  final token = prefs.getString('access_token');
+                  if (token == null) {
+                    // Show login prompt
+                    _showLoginPrompt();
+                    return;
+                  }
+
                   // Navigate to review form
                   if (mounted) {
                     Navigator.pushNamed(
@@ -827,11 +884,14 @@ class _CustomerBusTimeTableScreenState
   Widget _buildTimeDisplay(String label, String time) {
     return Column(
       children: [
-        Text(label,
-            style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-                fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           time,
