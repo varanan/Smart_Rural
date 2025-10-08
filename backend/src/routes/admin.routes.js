@@ -4,7 +4,14 @@ const {
   login, 
   getProfile,
   listAllAdmins,
-  debugDatabase
+  debugDatabase,
+  getUnverifiedDrivers,
+  getUnverifiedConnectors,
+  verifyDriver,
+  verifyConnector,
+  getAllDrivers,
+  getAllConnectors,
+  rejectDriver
 } = require('../controllers/admin.controllers');
 const { 
   adminRegisterSchema, 
@@ -25,5 +32,14 @@ router.get('/profile', authenticate, getProfile);
 // Debug routes (remove in production)
 router.get('/list', listAllAdmins);
 router.get('/debug', debugDatabase);
+
+// Verification routes
+router.get('/drivers/unverified', authenticate, getUnverifiedDrivers);
+router.get('/connectors/unverified', authenticate, getUnverifiedConnectors);
+router.get('/drivers', authenticate, getAllDrivers);
+router.get('/connectors', authenticate, getAllConnectors);
+router.patch('/drivers/:id/verify', authenticate, verifyDriver);
+router.patch('/drivers/:id/reject', authenticate, rejectDriver);
+router.patch('/connectors/:id/verify', authenticate, verifyConnector);
 
 module.exports = router;

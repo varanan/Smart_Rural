@@ -33,8 +33,28 @@ const busTimeTableSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
-    required: true
+    refPath: 'createdByModel'
+  },
+  createdByModel: {
+    type: String,
+    enum: ['Admin', 'Driver'],
+    default: 'Admin'
+  },
+  status: {
+    type: String,
+    enum: ['approved', 'pending', 'rejected'],
+    default: 'approved'
+  },
+  rejectionReason: {
+    type: String,
+    default: null
+  },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin'
+  },
+  reviewedAt: {
+    type: Date
   }
 }, {
   timestamps: true
@@ -45,5 +65,7 @@ busTimeTableSchema.index({ from: 1, to: 1 });
 busTimeTableSchema.index({ startTime: 1 });
 busTimeTableSchema.index({ busType: 1 });
 busTimeTableSchema.index({ isActive: 1 });
+busTimeTableSchema.index({ status: 1 });
+busTimeTableSchema.index({ createdBy: 1 });
 
 module.exports = mongoose.model('BusTimeTable', busTimeTableSchema);

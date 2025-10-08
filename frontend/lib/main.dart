@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'services/sync_service.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/auth/role_select_screen.dart';
@@ -18,8 +20,12 @@ import 'features/reviews/my_reviews_screen.dart';
 import 'features/reviews/all_reviews_screen.dart';
 import 'features/reviews/review_form_screen.dart';
 import 'models/bus_timetable.dart';
-import 'dart:convert';
 import 'features/reviews/bus_reviews_screen.dart';
+import 'features/admin/verify_users_screen.dart';
+// Add these imports after line 23
+import 'features/driver/driver_schedule_screen.dart';
+import 'features/driver/notifications_screen.dart';
+import 'features/admin/admin_schedule_approval_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,13 +89,54 @@ class MyApp extends StatelessWidget {
             busInfo: args?['busInfo'],
           );
         },
+        '/driver-schedules': (context) => const DriverScheduleScreen(),
+        '/driver-notifications': (context) => const NotificationsScreen(),
+        '/admin-schedule-approval': (context) => const AdminScheduleApprovalScreen(),
       },
     );
   }
 }
 
-class _DriverHomePlaceholder extends StatelessWidget {
+class _DriverHomePlaceholder extends StatefulWidget {
   const _DriverHomePlaceholder();
+
+  @override
+  State<_DriverHomePlaceholder> createState() => _DriverHomePlaceholderState();
+}
+
+class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
+  bool _isVerified = false;
+  bool _isLoading = true;
+  String _userName = '';
+  String _verificationStatus = 'pending';
+  String? _rejectionReason;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataString = prefs.getString('user_data');
+      if (userDataString != null) {
+        final userData = jsonDecode(userDataString);
+        setState(() {
+          _isVerified = userData['isVerified'] ?? false;
+          _userName = userData['fullName'] ?? 'Driver';
+          _verificationStatus = userData['verificationStatus'] ?? 'pending';
+          _rejectionReason = userData['rejectionReason'];
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,64 +146,216 @@ class _DriverHomePlaceholder extends StatelessWidget {
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.directions_bus,
-              size: 64,
-              color: Color(0xFF2563EB),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Driver Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 32),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, '/customer-bus-timetable'),
-                    icon: const Icon(Icons.schedule),
-                    label: const Text('View Bus Time Table'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF97316),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.directions_bus,
+                      size: 64,
+                      color: Color(0xFF2563EB),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/chatbot'),
-                    icon: const Icon(Icons.smart_toy),
-                    label: const Text('AI Assistant'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Welcome, $_userName',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/all-reviews'),
-                    icon: const Icon(Icons.rate_review),
-                    label: const Text('View Reviews'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
+                    const SizedBox(height: 16),
+                    // Verification Status Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _verificationStatus == 'rejected'
+                            ? Colors.red.withOpacity(0.2)
+                            : (_isVerified
+                                ? Colors.green.withOpacity(0.2)
+                                : Colors.orange.withOpacity(0.2)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _verificationStatus == 'rejected'
+                              ? Colors.red
+                              : (_isVerified ? Colors.green : Colors.orange),
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _verificationStatus == 'rejected'
+                                ? Icons.cancel
+                                : (_isVerified
+                                    ? Icons.verified
+                                    : Icons.pending),
+                            color: _verificationStatus == 'rejected'
+                                ? Colors.red
+                                : (_isVerified ? Colors.green : Colors.orange),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _verificationStatus == 'rejected'
+                                ? 'Profile Rejected'
+                                : (_isVerified
+                                    ? 'Profile Verified'
+                                    : 'Verification Pending'),
+                            style: TextStyle(
+                              color: _verificationStatus == 'rejected'
+                                  ? Colors.red
+                                  : (_isVerified ? Colors.green : Colors.orange),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    if (!_isVerified) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _verificationStatus == 'rejected'
+                            ? 'Your profile was rejected by admin'
+                            : 'Your profile is awaiting admin verification',
+                        style: TextStyle(
+                          color: _verificationStatus == 'rejected' ? Colors.red : Colors.grey,
+                          fontSize: 14,
+                          fontWeight: _verificationStatus == 'rejected' 
+                              ? FontWeight.bold 
+                              : FontWeight.normal,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    if (_verificationStatus == 'rejected' && _rejectionReason != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.info, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Rejection Reason:',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _rejectionReason!,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/driver-schedules',
+                            ),
+                            icon: const Icon(Icons.schedule),
+                            label: const Text('My Schedules'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF97316),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/driver-notifications',
+                            ),
+                            icon: const Icon(Icons.notifications),
+                            label: const Text('Notifications'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/customer-bus-timetable',
+                            ),
+                            icon: const Icon(Icons.schedule),
+                            label: const Text('View Bus Time Table'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/chatbot',
+                            ),
+                            icon: const Icon(Icons.smart_toy),
+                            label: const Text('AI Assistant'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/all-reviews',
+                            ),
+                            icon: const Icon(Icons.rate_review),
+                            label: const Text('View Reviews'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -235,6 +434,38 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
               child: Column(
                 children: [
                   ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const VerifyUsersScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.verified_user),
+                    label: const Text('Verify Users'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminScheduleApprovalScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.pending_actions),
+                    label: const Text('Approve Schedules'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
                     onPressed: () =>
                         Navigator.pushNamed(context, '/bus-timetable'),
                     icon: const Icon(Icons.schedule),
@@ -277,8 +508,44 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
   }
 }
 
-class _ConnectorPanelPlaceholder extends StatelessWidget {
+class _ConnectorPanelPlaceholder extends StatefulWidget {
   const _ConnectorPanelPlaceholder();
+
+  @override
+  State<_ConnectorPanelPlaceholder> createState() =>
+      _ConnectorPanelPlaceholderState();
+}
+
+class _ConnectorPanelPlaceholderState
+    extends State<_ConnectorPanelPlaceholder> {
+  bool _isVerified = false;
+  bool _isLoading = true;
+  String _userName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataString = prefs.getString('user_data');
+      if (userDataString != null) {
+        final userData = jsonDecode(userDataString);
+        setState(() {
+          _isVerified = userData['isVerified'] ?? false;
+          _userName = userData['fullName'] ?? 'Connector';
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -288,64 +555,131 @@ class _ConnectorPanelPlaceholder extends StatelessWidget {
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.connect_without_contact,
-              size: 64,
-              color: Color(0xFF2563EB),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Connector Panel',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 32),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, '/customer-bus-timetable'),
-                    icon: const Icon(Icons.schedule),
-                    label: const Text('View Bus Time Table'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF97316),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.connect_without_contact,
+                      size: 64,
+                      color: Color(0xFF2563EB),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/chatbot'),
-                    icon: const Icon(Icons.smart_toy),
-                    label: const Text('AI Assistant'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Welcome, $_userName',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/all-reviews'),
-                    icon: const Icon(Icons.rate_review),
-                    label: const Text('View Reviews'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
+                    const SizedBox(height: 16),
+                    // Verification Status Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isVerified
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _isVerified ? Colors.green : Colors.orange,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isVerified ? Icons.verified : Icons.pending,
+                            color: _isVerified ? Colors.green : Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isVerified
+                                ? 'Profile Verified'
+                                : 'Verification Pending',
+                            style: TextStyle(
+                              color: _isVerified ? Colors.green : Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    if (!_isVerified) ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Your profile is awaiting admin verification',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/customer-bus-timetable',
+                            ),
+                            icon: const Icon(Icons.schedule),
+                            label: const Text('View Bus Time Table'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF97316),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/chatbot',
+                            ),
+                            icon: const Icon(Icons.smart_toy),
+                            label: const Text('AI Assistant'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              '/all-reviews',
+                            ),
+                            icon: const Icon(Icons.rate_review),
+                            label: const Text('View Reviews'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
