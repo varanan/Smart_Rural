@@ -352,6 +352,121 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                         ],
                       ),
                     ),
+                    // Show Re-Register section only for rejected drivers
+                    if (_verificationStatus == 'rejected') ...[
+                      const Divider(thickness: 2, color: Colors.grey),
+                      const SizedBox(height: 24),
+                      
+                      // Warning message
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.symmetric(horizontal: 32),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange, width: 2),
+                        ),
+                        child: const Column(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.orange, size: 32),
+                            SizedBox(height: 8),
+                            Text(
+                              'Account Rejected',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'You can re-register with corrected information using the same email address.',
+                              style: TextStyle(fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Re-Register Button
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            // Show confirmation dialog
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Re-Register Account'),
+                                content: const Text(
+                                  'This will log you out and allow you to register again with corrected information.\n\n'
+                                  'You can use the same email address.\n\n'
+                                  'Are you sure you want to continue?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Yes, Re-Register'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              // Clear all stored data
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.clear();
+                              
+                              if (mounted) {
+                                // Navigate to registration screen
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/auth/driver/register',
+                                  (route) => false,
+                                );
+                                
+                                // Show helpful message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'You can now register again with corrected information',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    duration: Duration(seconds: 4),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.refresh, size: 28),
+                          label: const Text(
+                            'Re-Register with New Info',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                    ],
                   ],
                 ),
               ),

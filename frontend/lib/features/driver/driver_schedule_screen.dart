@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/bus_timetable.dart';
 import '../../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class DriverScheduleScreen extends StatefulWidget {
   const DriverScheduleScreen({super.key});
@@ -12,11 +14,30 @@ class DriverScheduleScreen extends StatefulWidget {
 class _DriverScheduleScreenState extends State<DriverScheduleScreen> {
   List<BusTimeTable> _schedules = [];
   bool _isLoading = false;
+  bool _isVerified = false;
+  String _verificationStatus = 'pending';
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _loadSchedules();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataString = prefs.getString('user_data');
+      if (userDataString != null) {
+        final userData = jsonDecode(userDataString);
+        setState(() {
+          _isVerified = userData['isVerified'] ?? false;
+          _verificationStatus = userData['verificationStatus'] ?? 'pending';
+        });
+      }
+    } catch (e) {
+      // Handle error
+    }
   }
 
   Future<void> _loadSchedules() async {
@@ -113,51 +134,95 @@ class _DriverScheduleScreenState extends State<DriverScheduleScreen> {
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
+      body: Column(
+        children: [
+          // Add status banner for unverified drivers
+          if (!_isVerified)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: _verificationStatus == 'rejected'
+                  ? Colors.red.withOpacity(0.2)
+                  : Colors.orange.withOpacity(0.2),
+              child: Row(
+                children: [
+                  Icon(
+                    _verificationStatus == 'rejected'
+                        ? Icons.cancel
+                        : Icons.pending,
+                    color: _verificationStatus == 'rejected'
+                        ? Colors.red
+                        : Colors.orange,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _verificationStatus == 'rejected'
+                          ? 'Your account was rejected. You can view schedules but cannot create new ones. Please re-register with correct information.'
+                          : 'Your account is pending verification. You can view schedules but cannot create new ones until approved.',
+                      style: TextStyle(
+                        color: _verificationStatus == 'rejected'
+                            ? Colors.red
+                            : Colors.orange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Existing body content
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
+                    ),
+                  )
+                : _schedules.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.schedule, size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(
+                              'No schedules yet',
+                              style: TextStyle(color: Colors.grey, fontSize: 18),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Create your first schedule',
+                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadSchedules,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _schedules.length,
+                          itemBuilder: (context, index) {
+                            final schedule = _schedules[index];
+                            return _buildScheduleCard(schedule);
+                          },
+                        ),
+                      ),
+          ),
+        ],
+      ),
+      floatingActionButton: _isVerified
+          ? FloatingActionButton.extended(
+              onPressed: () => _showAddEditForm(),
+              backgroundColor: const Color(0xFFF97316),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Add Schedule',
+                style: TextStyle(color: Colors.white),
               ),
             )
-          : _schedules.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.schedule, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'No schedules yet',
-                        style: TextStyle(color: Colors.grey, fontSize: 18),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Create your first schedule',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadSchedules,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _schedules.length,
-                    itemBuilder: (context, index) {
-                      final schedule = _schedules[index];
-                      return _buildScheduleCard(schedule);
-                    },
-                  ),
-                ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddEditForm(),
-        backgroundColor: const Color(0xFFF97316),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Add Schedule',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
+          : null, // Don't show button if not verified
     );
   }
 
@@ -220,30 +285,53 @@ class _DriverScheduleScreenState extends State<DriverScheduleScreen> {
                   icon: const Icon(Icons.more_vert, color: Colors.white),
                   color: const Color(0xFF1F2937),
                   onSelected: (value) {
-                    if (value == 'edit') {
+                    if (value == 'edit' && _isVerified) { // Add verification check
                       _showAddEditForm(schedule);
-                    } else if (value == 'delete') {
+                    } else if (value == 'delete' && _isVerified) { // Add verification check
                       _deleteSchedule(schedule);
+                    } else if (!_isVerified) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('You must be verified to edit or delete schedules'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
+                      enabled: _isVerified, // Disable if not verified
                       child: Row(
                         children: [
-                          Icon(Icons.edit, color: Colors.white, size: 20),
-                          SizedBox(width: 8),
-                          Text('Edit', style: TextStyle(color: Colors.white)),
+                          Icon(Icons.edit,
+                            color: _isVerified ? Colors.white : Colors.grey,
+                            size: 20
+                          ),
+                          const SizedBox(width: 8),
+                          Text('Edit',
+                            style: TextStyle(
+                              color: _isVerified ? Colors.white : Colors.grey
+                            )
+                          ),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
+                      enabled: _isVerified, // Disable if not verified
                       child: Row(
                         children: [
-                          Icon(Icons.delete, color: Colors.red, size: 20),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          Icon(Icons.delete,
+                            color: _isVerified ? Colors.red : Colors.grey,
+                            size: 20
+                          ),
+                          const SizedBox(width: 8),
+                          Text('Delete',
+                            style: TextStyle(
+                              color: _isVerified ? Colors.red : Colors.grey
+                            )
+                          ),
                         ],
                       ),
                     ),
