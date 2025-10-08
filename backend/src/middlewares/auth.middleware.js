@@ -68,7 +68,24 @@ const authorize = (...roles) => {
   };
 };
 
+// Add this new middleware function after the authorize function
+const requireVerification = (req, res, next) => {
+  // Only check verification for drivers
+  if (req.user.role === 'driver') {
+    if (!req.user.isVerified || req.user.verificationStatus !== 'approved') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account must be verified by admin before performing this action',
+        verificationStatus: req.user.verificationStatus,
+        rejectionReason: req.user.rejectionReason
+      });
+    }
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
-  authorize
+  authorize,
+  requireVerification  // Export the new middleware
 };

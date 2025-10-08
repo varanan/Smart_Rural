@@ -9,7 +9,7 @@ const {
   approveSchedule,
   rejectSchedule
 } = require('../controllers/bus-timetable.controllers');
-const { authenticate, authorize } = require('../middlewares/auth.middleware');
+const { authenticate, authorize, requireVerification } = require('../middlewares/auth.middleware');
 const { busTimeTableSchema, validate } = require('../controllers/validators/bus-timetable.validators');
 
 const router = express.Router();
@@ -20,9 +20,26 @@ router.get('/:id', authenticate, getBusTimeTableById);
 
 // Driver routes
 router.get('/driver/my-schedules', authenticate, authorize('driver'), getDriverSchedules);
-router.post('/driver/create', authenticate, authorize('driver'), validate(busTimeTableSchema), createBusTimeTable);
-router.put('/driver/:id', authenticate, authorize('driver'), validate(busTimeTableSchema), updateBusTimeTable);
-router.delete('/driver/:id', authenticate, authorize('driver'), deleteBusTimeTable);
+router.post('/driver/create', 
+  authenticate, 
+  authorize('driver'), 
+  requireVerification,  // Add this
+  validate(busTimeTableSchema), 
+  createBusTimeTable
+);
+router.put('/driver/:id', 
+  authenticate, 
+  authorize('driver'), 
+  requireVerification,  // Add this
+  validate(busTimeTableSchema), 
+  updateBusTimeTable
+);
+router.delete('/driver/:id', 
+  authenticate, 
+  authorize('driver'), 
+  requireVerification,  // Add this
+  deleteBusTimeTable
+);
 
 // Admin routes
 router.post('/', authenticate, authorize('admin', 'super_admin'), validate(busTimeTableSchema), createBusTimeTable);

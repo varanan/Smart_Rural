@@ -603,7 +603,7 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/admin/drivers/$driverId/verify');
       final response = await http
-          .put(url, headers: await _getHeaders(includeAuth: true))
+          .patch(url, headers: await _getHeaders(includeAuth: true))
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
@@ -621,7 +621,7 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/admin/connectors/$connectorId/verify');
       final response = await http
-          .put(url, headers: await _getHeaders(includeAuth: true))
+          .patch(url, headers: await _getHeaders(includeAuth: true))
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
