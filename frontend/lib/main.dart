@@ -44,25 +44,23 @@ class MyApp extends StatelessWidget {
         '/auth/driver/register': (context) => const DriverRegisterScreen(),
         '/driverHome': (context) => const _DriverHomePlaceholder(),
         '/auth/passenger/login': (context) => const PassengerLoginScreen(),
-        '/auth/passenger/register': (context) =>
-            const PassengerRegisterScreen(),
+        '/auth/passenger/register': (context) => const PassengerRegisterScreen(),
         '/passengerHome': (context) => const PassengerDashboard(),
         '/auth/admin/login': (context) => const AdminLoginScreen(),
         '/auth/admin/register': (context) => const AdminRegisterScreen(),
         '/adminDashboard': (context) => const _AdminDashboardPlaceholder(),
         '/auth/connector/login': (context) => const ConnectorLoginScreen(),
-        '/auth/connector/register': (context) =>
-            const ConnectorRegisterScreen(),
+        '/auth/connector/register': (context) => const ConnectorRegisterScreen(),
         '/connectorPanel': (context) => const _ConnectorPanelPlaceholder(),
-        '/bus-timetable': (context) => const BusTimeTableScreen(), // Admin view
-        '/customer-bus-timetable': (context) =>
-            const CustomerBusTimeTableScreen(), // Customer view
-        '/chatbot': (context) => const ChatbotScreen(), // AI Chatbot
+        '/bus-timetable': (context) => const BusTimeTableScreen(),
+        '/customer-bus-timetable': (context) => const CustomerBusTimeTableScreen(),
+        '/chatbot': (context) => const ChatbotScreen(),
       },
     );
   }
 }
 
+// ... (rest of your placeholder classes remain the same)
 class _DriverHomePlaceholder extends StatelessWidget {
   const _DriverHomePlaceholder();
 

@@ -12,6 +12,7 @@ const passengerRoutes = require('./routes/passenger.routes');
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const busTimeTableRoutes = require('./routes/bus-timetable.routes');
+const rideShareRoutes = require('./routes/ride-share.routes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/passenger', passengerRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bus-timetable', busTimeTableRoutes);
+app.use('/api/ride-share', rideShareRoutes);
 
 // -------------------------
 // Error handling middleware (must be last)
