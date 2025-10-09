@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticateToken } = require('../middlewares/auth.middleware');
+const { authenticate } = require('../middlewares/auth.middleware'); // Changed from authenticateToken to authenticate
 const {
   createRideShare,
   getRideShares,
@@ -16,11 +16,11 @@ const router = express.Router();
 router.get('/', getRideShares);
 
 // Protected routes
-router.post('/', authenticateToken, createRideShare);
-router.get('/connector', authenticateToken, getConnectorRides);
-router.patch('/:id/status', authenticateToken, updateRideStatus);
-router.post('/request', authenticateToken, requestRide);
-router.post('/:id/respond', authenticateToken, respondToRequest);
-router.get('/passenger', authenticateToken, getPassengerRides);
+router.post('/', authenticate, createRideShare); // Changed authenticateToken to authenticate
+router.get('/connector', authenticate, getConnectorRides);
+router.patch('/:id/status', authenticate, updateRideStatus);
+router.post('/request', authenticate, requestRide);
+router.post('/:id/respond', authenticate, respondToRequest);
+router.get('/passenger', authenticate, getPassengerRides);
 
 module.exports = router;
