@@ -14,6 +14,7 @@ const createRideShare = async (req, res, next) => {
       throw error;
     }
 
+    // For connectors: Use req.user (authentication still works for connectors)
     const ride = await rideShareService.createRideShare(req.user.id, value);
     res.status(201).json({
       success: true,
@@ -40,6 +41,7 @@ const getRideShares = async (req, res, next) => {
 
 const getConnectorRides = async (req, res, next) => {
   try {
+    // For connectors: Use req.user (authentication still works)
     const rides = await rideShareService.getConnectorRides(req.user.id);
     res.json({
       success: true,
@@ -53,6 +55,7 @@ const getConnectorRides = async (req, res, next) => {
 
 const updateRideStatus = async (req, res, next) => {
   try {
+    // For connectors: Use req.user (authentication still works)
     const ride = await rideShareService.updateRideStatus(req.params.id, req.body.isActive);
     if (!ride) {
       const error = new Error('Ride not found');
@@ -78,7 +81,16 @@ const requestRide = async (req, res, next) => {
       throw error;
     }
 
-    const ride = await rideShareService.requestRide(value.rideId, req.user.id);
+    // For passengers: Get passengerId from request body (no authentication)
+    const passengerId = req.body.passengerId;
+    if (!passengerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passenger ID is required in request body'
+      });
+    }
+
+    const ride = await rideShareService.requestRide(value.rideId, passengerId);
     res.json({
       success: true,
       message: 'Ride request sent successfully',
@@ -97,6 +109,7 @@ const respondToRequest = async (req, res, next) => {
       throw error;
     }
 
+    // For connectors: Use req.user (authentication still works)
     const ride = await rideShareService.respondToRequest(
       req.params.id,
       value.requestId,
@@ -115,7 +128,16 @@ const respondToRequest = async (req, res, next) => {
 
 const getPassengerRides = async (req, res, next) => {
   try {
-    const rides = await rideShareService.getPassengerRides(req.user.id);
+    // For passengers: Get passengerId from query parameters (no authentication)
+    const passengerId = req.query.passengerId;
+    if (!passengerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passenger ID is required as query parameter: ?passengerId=XXX'
+      });
+    }
+
+    const rides = await rideShareService.getPassengerRides(passengerId);
     res.json({
       success: true,
       message: 'Passenger rides retrieved successfully',

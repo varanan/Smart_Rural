@@ -66,6 +66,13 @@ const rideRequestSchema = Joi.object({
     .messages({
       'string.empty': 'Ride ID is required',
       'any.required': 'Ride ID is required'
+    }),
+  
+  passengerId: Joi.string() // ADDED: passengerId field for no-auth requests
+    .required()
+    .messages({
+      'string.empty': 'Passenger ID is required',
+      'any.required': 'Passenger ID is required'
     })
 });
 
