@@ -2,17 +2,20 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/core/config.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-  // For Android emulator use: 'http://10.0.2.2:3000/api'
-  // For iOS simulator use: 'http://localhost:3000/api'
-  // For physical device use your computer's IP: 'http://192.168.1.xxx:3000/api'
+  // Use dynamic base URL that adapts per platform (web, iOS, Android, desktop)
+  static String get baseUrl => AppConfig.baseUrl;
 
   static Future<Map<String, String>> _getHeaders({
     bool includeAuth = false,
+    bool includeJsonContentType = true,
   }) async {
-    final headers = {'Content-Type': 'application/json'};
+    final headers = <String, String>{};
+    if (includeJsonContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (includeAuth) {
       final prefs = await SharedPreferences.getInstance();
@@ -160,8 +163,13 @@ class ApiService {
   static Future<Map<String, dynamic>> getAdminProfile() async {
     try {
       final url = Uri.parse('$baseUrl/admin/profile');
+      // Public endpoint: do NOT include auth; SharedPreferences access on web can add latency.
+      final headers = await _getHeaders(includeAuth: false, includeJsonContentType: false);
+      // Debug (safe): log URL only to console for troubleshooting
+      // ignore: avoid_print
+      print('[ApiService] GET $url');
       final response = await http
-          .get(url, headers: await _getHeaders(includeAuth: true))
+          .get(url, headers: headers)
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
