@@ -5,7 +5,8 @@ const createRideShare = async (connectorId, rideData) => {
   try {
     const ride = new RideShare({
       ...rideData,
-      createdBy: connectorId
+      createdBy: connectorId,
+      availableSeats: rideData.seatCapacity 
     });
     await ride.save();
     return ride;
@@ -15,6 +16,7 @@ const createRideShare = async (connectorId, rideData) => {
   }
 };
 
+// ... rest of your service functions remain the same
 const getRideShares = async (query = {}) => {
   try {
     const rides = await RideShare.find({ isActive: true, ...query })
