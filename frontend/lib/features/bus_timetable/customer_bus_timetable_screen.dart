@@ -759,62 +759,28 @@ class _CustomerBusTimeTableScreenState
                 ],
               ),
             ),
-            
-            // ✅ NEW: Add Review Button
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 16),
+
+            // Booking Button
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  // Check if user is logged in
-                  
-                  final prefs = await SharedPreferences.getInstance();
-                  final token = prefs.getString('access_token');
-                  if (token == null) {
-                    // Show login prompt
-                    _showLoginPrompt();
-                    return;
-                  }
-                  
-                  // Navigate to review form
-                  if (mounted) {
-                    Navigator.pushNamed(
-                      context,
-                      '/write-review',
-                      arguments: timetable,
-                    );
-                  }
-                },
-                icon: const Icon(Icons.rate_review, size: 18),
-                label: const Text('Write Review'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFF97316),
-                  side: const BorderSide(color: Color(0xFFF97316)),
+              child: ElevatedButton(
+                onPressed: () => _bookTicket(timetable),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF97316),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BusReviewsScreen(
-                        busId: timetable.id ?? '',
-                        busInfo: timetable,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.star_outline, size: 18),
-                label: const Text('View All Reviews'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF60A5FA),
-                  side: const BorderSide(color: Color(0xFF60A5FA)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                child: const Text(
+                  'Book Ticket',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -858,5 +824,40 @@ class _CustomerBusTimeTableScreenState
       default:
         return Colors.orange;
     }
+  }
+
+  void _bookTicket(BusTimeTable timetable) {
+    // Show date picker for journey date
+    showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFF97316),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    ).then((selectedDate) {
+      if (selectedDate != null) {
+        // Navigate to seat selection screen
+        Navigator.pushNamed(
+          context,
+          '/seat-selection',
+          arguments: {
+            'timetable': timetable,
+            'journeyDate': selectedDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+          },
+        );
+      }
+    });
   }
 }

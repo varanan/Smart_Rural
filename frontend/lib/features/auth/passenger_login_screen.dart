@@ -62,6 +62,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       final passenger = Map<String, dynamic>.from(data['passenger'] as Map);
 
+      // Always save tokens for authenticated requests
       // ✅ FIXED: Save token in both formats for compatibility
       final prefs = await SharedPreferences.getInstance();
       

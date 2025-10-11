@@ -51,7 +51,6 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
     });
   }
 
-  // ✅ FINAL _onCreate FUNCTION
   Future<void> _onCreate() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false) || !_agree) {
@@ -64,7 +63,6 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
       _canSubmit = false;
     });
 
-    // ✅ New Payload
     final payload = <String, dynamic>{
       'fullName': _nameCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),

@@ -84,13 +84,13 @@ const createSampleTimetables = async () => {
     // Find the first admin user to assign as creator
     const admin = await Admin.findOne({ isActive: true });
     if (!admin) {
-      console.log('❌ No admin user found. Please create an admin user first.');
+      console.log('No admin user found. Please create an admin user first.');
       process.exit(1);
     }
 
     // Clear existing timetables
     await BusTimeTable.deleteMany({});
-    console.log('🗑️  Cleared existing timetables');
+    console.log('Cleared existing timetables');
 
     // Create sample timetables
     const timetables = sampleTimetables.map(timetable => ({
@@ -99,17 +99,17 @@ const createSampleTimetables = async () => {
     }));
 
     await BusTimeTable.insertMany(timetables);
-    console.log(`✅ Created ${timetables.length} sample bus timetables`);
+    console.log(`Created ${timetables.length} sample bus timetables`);
 
     // Display created timetables
     const createdTimetables = await BusTimeTable.find({}).populate('createdBy', 'name');
     createdTimetables.forEach(timetable => {
-      console.log(`📍 ${timetable.from} → ${timetable.to} | ${timetable.startTime}-${timetable.endTime} | ${timetable.busType}`);
+      console.log(`${timetable.from} -> ${timetable.to} | ${timetable.startTime}-${timetable.endTime} | ${timetable.busType}`);
     });
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error creating sample timetables:', error);
+    console.error('Error creating sample timetables:', error);
     process.exit(1);
   }
 };
