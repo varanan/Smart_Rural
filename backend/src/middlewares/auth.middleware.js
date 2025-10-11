@@ -2,6 +2,7 @@ const { verifyAccessToken } = require('../utils/jwt');
 const Admin = require('../models/admin.model');
 const Driver = require('../models/driver.model');
 const Passenger = require('../models/passenger.model');
+const Connector = require('../models/connector.model');
 const logger = require('../utils/logger');
 
 const authenticate = async (req, res, next) => {
@@ -25,6 +26,8 @@ const authenticate = async (req, res, next) => {
       user = await Driver.findById(decoded.id).select('-password');
     } else if (decoded.role === 'passenger') {
       user = await Passenger.findById(decoded.id).select('-password');
+    } else if (decoded.role === 'connector') {
+      user = await Connector.findById(decoded.id).select('-password');
     }
 
     if (!user || !user.isActive) {
@@ -38,7 +41,7 @@ const authenticate = async (req, res, next) => {
     next();
   } catch (error) {
     logger.error('Authentication failed', { error: error.message });
-    res.status(401).json({
+    return res.status(401).json({
       success: false,
       message: 'Invalid or expired token'
     });
@@ -65,7 +68,24 @@ const authorize = (...roles) => {
   };
 };
 
+// Add this new middleware function after the authorize function
+const requireVerification = (req, res, next) => {
+  // Only check verification for drivers
+  if (req.user.role === 'driver') {
+    if (!req.user.isVerified || req.user.verificationStatus !== 'approved') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account must be verified by admin before performing this action',
+        verificationStatus: req.user.verificationStatus,
+        rejectionReason: req.user.rejectionReason
+      });
+    }
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
-  authorize
+  authorize,
+  requireVerification  // Export the new middleware
 };
