@@ -14,6 +14,10 @@ import 'features/bus_timetable/bus_timetable_screen.dart';
 import 'features/bus_timetable/customer_bus_timetable_screen.dart';
 import 'features/dashboard/passenger_dashboard.dart';
 import 'features/chatbot/chatbot_screen.dart';
+import 'features/dashboard/connector_dashboard.dart';
+import 'features/ride_share/create_ride_share_screen.dart';
+import 'features/ride_share/connector_ride_requests_screen.dart';
+import 'features/ride_share/passenger_ride_share_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,10 +55,13 @@ class MyApp extends StatelessWidget {
         '/adminDashboard': (context) => const _AdminDashboardPlaceholder(),
         '/auth/connector/login': (context) => const ConnectorLoginScreen(),
         '/auth/connector/register': (context) => const ConnectorRegisterScreen(),
-        '/connectorPanel': (context) => const _ConnectorPanelPlaceholder(),
+        '/connectorPanel': (context) => const ConnectorDashboard(),
         '/bus-timetable': (context) => const BusTimeTableScreen(),
         '/customer-bus-timetable': (context) => const CustomerBusTimeTableScreen(),
         '/chatbot': (context) => const ChatbotScreen(),
+        '/ride-share/create': (context) => const CreateRideShareScreen(),
+        '/ride-share/requests': (context) => const ConnectorRideRequestsScreen(),
+        '/ride-share/passenger': (context) => const PassengerRideShareScreen(),
       },
     );
   }

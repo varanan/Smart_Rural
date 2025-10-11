@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
-import '../../core/auth_api.dart'; // ✅ Added
+import '../../core/auth_api.dart'; 
+import '../../core/config.dart';
 
 class ConnectorLoginScreen extends StatefulWidget {
   const ConnectorLoginScreen({super.key});
@@ -26,7 +30,7 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
     super.dispose();
   }
 
-  // ✅ FINAL _onLogin FUNCTION (as per your request)
+  //  FINAL _onLogin FUNCTION (as per your request)
   Future<void> _onLogin() async {
     final form = _formKey.currentState;
     if (form == null) return;
@@ -34,25 +38,36 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
 
     setState(() => _loading = true);
     try {
-      final data = await connectorLogin(
-        _emailCtrl.text.trim(),
-        _passwordCtrl.text,
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/auth/connector/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': _emailCtrl.text,
+          'password': _passwordCtrl.text,
+        }),
       );
 
-      // ignore: avoid_print
-      print('[connectorLogin] parsed data: $data');
+      final data = json.decode(response.body);
 
-      // Optional: store tokens and connector user if you add storage helpers
-      // final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
-      // final connector = Map<String, dynamic>.from(data['connector'] as Map);
+      if (response.statusCode == 200 && data['success']) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['data']['accessToken']);
+        await prefs.setString('userId', data['data']['user']['_id']);
+        await prefs.setString('role', 'connector');
 
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/connectorPanel');
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/connectorPanel');
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Login failed')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }

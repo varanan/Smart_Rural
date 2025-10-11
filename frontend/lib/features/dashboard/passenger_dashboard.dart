@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../chatbot/chatbot_screen.dart';
 import '../bus_timetable/customer_bus_timetable_screen.dart';
+import '../ride_share/passenger_ride_share_screen.dart';
 
 class PassengerDashboard extends StatefulWidget {
   const PassengerDashboard({super.key});
@@ -176,6 +177,18 @@ class _DashboardHome extends StatelessWidget {
                       const SnackBar(content: Text('Coming soon!')),
                     );
                   },
+                ),
+                _buildActionCard(
+                  context,
+                  'Ride Sharing',
+                  Icons.directions_car,
+                  'Find and request shared rides',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PassengerRideShareScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),
