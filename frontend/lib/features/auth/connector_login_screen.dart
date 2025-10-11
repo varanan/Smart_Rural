@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
-import '../../core/auth_api.dart'; 
-import '../../core/config.dart';
+import '../../core/auth_api.dart';
 
 class ConnectorLoginScreen extends StatefulWidget {
   const ConnectorLoginScreen({super.key});
@@ -30,7 +28,7 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
     super.dispose();
   }
 
-  //  FINAL _onLogin FUNCTION (as per your request)
+  // ✅ FINAL _onLogin FUNCTION (as per your request)
   Future<void> _onLogin() async {
     final form = _formKey.currentState;
     if (form == null) return;
@@ -38,36 +36,36 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
 
     setState(() => _loading = true);
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/auth/connector/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': _emailCtrl.text,
-          'password': _passwordCtrl.text,
-        }),
+      final data = await connectorLogin(
+        _emailCtrl.text.trim(),
+        _passwordCtrl.text,
       );
 
-      final data = json.decode(response.body);
+      // ✅ FIXED: Store tokens and connector user
+      final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
+      final connector = Map<String, dynamic>.from(data['connector'] as Map);
+      
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Save for AuthStorage (old system)
+      await AuthStorage.saveConnector(
+        access: tokens['access'] as String,
+        refresh: tokens['refresh'] as String,
+        connector: connector,
+      );
+      
+      // ✅ NEW: Also save for ApiService (review system)
+      await prefs.setString('access_token', tokens['access'] as String);
+      await prefs.setString('user_role', 'connector');
+      await prefs.setString('user_data', jsonEncode(connector));
 
-      if (response.statusCode == 200 && data['success']) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['data']['accessToken']);
-        await prefs.setString('userId', data['data']['user']['_id']);
-        await prefs.setString('role', 'connector');
-
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/connectorPanel');
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Login failed')),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/connectorPanel');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

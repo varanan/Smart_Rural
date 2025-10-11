@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:frontend/core/config.dart';
 import 'package:frontend/models/ride_share.dart';
-import 'package:frontend/services/auth_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RideShareService {
@@ -35,12 +34,14 @@ class RideShareService {
 
   Future<RideShare> createRideShare(Map<String, dynamic> rideData) async {
     try {
-      final response = await AuthInterceptor.authenticatedRequest(
-        (headers) => http.post(
-          Uri.parse('${AppConfig.baseUrl}/ride-share'),
-          headers: headers,
-          body: json.encode(rideData),
-        ),
+      final token = await _getToken();
+      final response = await http.post(
+        Uri.parse('${AppConfig.baseUrl}/ride-share'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(rideData),
       );
 
       if (response.statusCode == 201) {
@@ -55,11 +56,12 @@ class RideShareService {
 
   Future<List<RideShare>> getConnectorRides() async {
     try {
-      final response = await AuthInterceptor.authenticatedRequest(
-        (headers) => http.get(
-          Uri.parse('${AppConfig.baseUrl}/ride-share/connector'),
-          headers: headers,
-        ),
+      final token = await _getToken();
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/ride-share/connector'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
       );
 
       if (response.statusCode == 200) {
