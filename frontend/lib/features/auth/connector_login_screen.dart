@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
-import '../../core/auth_api.dart'; // ✅ Added
+import '../../core/auth_api.dart';
 
 class ConnectorLoginScreen extends StatefulWidget {
   const ConnectorLoginScreen({super.key});
@@ -26,7 +26,6 @@ class _ConnectorLoginScreenState extends State<ConnectorLoginScreen> {
     super.dispose();
   }
 
-  // ✅ FINAL _onLogin FUNCTION (as per your request)
   Future<void> _onLogin() async {
     final form = _formKey.currentState;
     if (form == null) return;

@@ -42,13 +42,12 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       final passenger = Map<String, dynamic>.from(data['passenger'] as Map);
 
-      if (_rememberMe) {
-        await AuthStorage.savePassenger(
-          access: tokens['access'] as String,
-          refresh: tokens['refresh'] as String,
-          passenger: passenger,
-        );
-      }
+      // Always save tokens for authenticated requests
+      await AuthStorage.savePassenger(
+        access: tokens['access'] as String,
+        refresh: tokens['refresh'] as String,
+        passenger: passenger,
+      );
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/passengerHome');

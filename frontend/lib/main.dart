@@ -10,6 +10,13 @@ import 'features/auth/admin_register_screen.dart';
 import 'features/auth/connector_register_screen.dart';
 import 'features/bus_timetable/bus_timetable_screen.dart';
 import 'features/bus_timetable/customer_bus_timetable_screen.dart';
+import 'features/booking/seat_selection_screen.dart';
+import 'features/booking/passenger_details_screen.dart';
+import 'features/booking/payment_screen.dart';
+import 'features/booking/booking_confirmation_screen.dart';
+import 'features/booking/my_bookings_screen.dart';
+import 'features/booking/booking_details_screen.dart';
+import 'core/auth_api.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,6 +54,49 @@ class MyApp extends StatelessWidget {
         '/bus-timetable': (context) => const BusTimeTableScreen(), // Admin view
         '/customer-bus-timetable': (context) =>
             const CustomerBusTimeTableScreen(), // Customer view
+        // Booking routes
+        '/seat-selection': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return SeatSelectionScreen(
+            timetable: args['timetable'],
+            journeyDate: args['journeyDate'],
+          );
+        },
+        '/passenger-details': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return PassengerDetailsScreen(
+            timetable: args['timetable'],
+            journeyDate: args['journeyDate'],
+            selectedSeats: args['selectedSeats'],
+            pricePerSeat: args['pricePerSeat'] ?? 100.0,
+          );
+        },
+        '/payment': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return PaymentScreen(
+            timetable: args['timetable'],
+            journeyDate: args['journeyDate'],
+            selectedSeats: args['selectedSeats'],
+            passengerDetails: args['passengerDetails'],
+            pricePerSeat: args['pricePerSeat'] ?? 100.0,
+          );
+        },
+        '/booking-confirmation': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return BookingConfirmationScreen(
+            timetable: args['timetable'],
+            journeyDate: args['journeyDate'],
+            selectedSeats: args['selectedSeats'],
+            passengerDetails: args['passengerDetails'],
+            transactionId: args['transactionId'],
+            totalAmount: args['totalAmount'],
+          );
+        },
+        '/my-bookings': (context) => const MyBookingsScreen(),
+        '/booking-details': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return BookingDetailsScreen(booking: args['booking']);
+        },
       },
     );
   }
@@ -55,6 +105,39 @@ class MyApp extends StatelessWidget {
 class _DriverHomePlaceholder extends StatelessWidget {
   const _DriverHomePlaceholder();
 
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Clear all stored authentication data
+      await AuthStorage.clear();
+      
+      if (context.mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate back to role selection screen
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/', 
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,6 +145,13 @@ class _DriverHomePlaceholder extends StatelessWidget {
         title: const Text('Driver Home'),
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _logout(context),
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -80,16 +170,31 @@ class _DriverHomePlaceholder extends StatelessWidget {
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    Navigator.pushNamed(context, '/customer-bus-timetable'),
-                icon: const Icon(Icons.schedule),
-                label: const Text('View Bus Time Table'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/customer-bus-timetable'),
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('View Bus Time Table'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => _logout(context),
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Logout'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -102,6 +207,39 @@ class _DriverHomePlaceholder extends StatelessWidget {
 class _PassengerHomePlaceholder extends StatelessWidget {
   const _PassengerHomePlaceholder();
 
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Clear all stored authentication data
+      await AuthStorage.clear();
+      
+      if (context.mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate back to role selection screen
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/', 
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,6 +247,13 @@ class _PassengerHomePlaceholder extends StatelessWidget {
         title: const Text('Passenger Home'),
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _logout(context),
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -123,16 +268,43 @@ class _PassengerHomePlaceholder extends StatelessWidget {
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton.icon(
-                onPressed: () =>
-                    Navigator.pushNamed(context, '/customer-bus-timetable'),
-                icon: const Icon(Icons.schedule),
-                label: const Text('View Bus Time Table'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/customer-bus-timetable'),
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('View Bus Time Table'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/my-bookings'),
+                    icon: const Icon(Icons.book_online),
+                    label: const Text('My Bookings'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => _logout(context),
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Logout'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -145,6 +317,39 @@ class _PassengerHomePlaceholder extends StatelessWidget {
 class _AdminDashboardPlaceholder extends StatelessWidget {
   const _AdminDashboardPlaceholder();
 
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Clear all stored authentication data
+      await AuthStorage.clear();
+      
+      if (context.mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate back to role selection screen
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/', 
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,6 +357,13 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
         title: const Text('Admin Dashboard'),
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _logout(context),
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -170,15 +382,30 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/bus-timetable'),
-                icon: const Icon(Icons.schedule),
-                label: const Text('Manage Bus Time Table'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/bus-timetable'),
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('Manage Bus Time Table'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF97316),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => _logout(context),
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Logout'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

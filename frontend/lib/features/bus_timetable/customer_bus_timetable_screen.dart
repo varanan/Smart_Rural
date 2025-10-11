@@ -537,6 +537,31 @@ class _CustomerBusTimeTableScreenState
                 ],
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Booking Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _bookTicket(timetable),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF97316),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Book Ticket',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -580,5 +605,40 @@ class _CustomerBusTimeTableScreenState
       default:
         return Colors.orange;
     }
+  }
+
+  void _bookTicket(BusTimeTable timetable) {
+    // Show date picker for journey date
+    showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFF97316),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    ).then((selectedDate) {
+      if (selectedDate != null) {
+        // Navigate to seat selection screen
+        Navigator.pushNamed(
+          context,
+          '/seat-selection',
+          arguments: {
+            'timetable': timetable,
+            'journeyDate': selectedDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+          },
+        );
+      }
+    });
   }
 }

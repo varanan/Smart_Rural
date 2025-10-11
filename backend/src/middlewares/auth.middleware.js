@@ -1,6 +1,7 @@
 const { verifyAccessToken } = require('../utils/jwt');
 const Admin = require('../models/admin.model');
 const Driver = require('../models/driver.model');
+const Passenger = require('../models/passenger.model');
 const logger = require('../utils/logger');
 
 const authenticate = async (req, res, next) => {
@@ -22,6 +23,8 @@ const authenticate = async (req, res, next) => {
       user = await Admin.findById(decoded.id).select('-password');
     } else if (decoded.role === 'driver') {
       user = await Driver.findById(decoded.id).select('-password');
+    } else if (decoded.role === 'passenger') {
+      user = await Passenger.findById(decoded.id).select('-password');
     }
 
     if (!user || !user.isActive) {

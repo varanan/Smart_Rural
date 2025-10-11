@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
-import '../../core/auth_api.dart'; // ✅ Added
+import '../../core/auth_api.dart';
 
 class ConnectorRegisterScreen extends StatefulWidget {
   const ConnectorRegisterScreen({super.key});
@@ -49,7 +49,6 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
     });
   }
 
-  // ✅ FINAL _onCreate FUNCTION
   Future<void> _onCreate() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false) || !_agree) {
@@ -62,7 +61,6 @@ class _ConnectorRegisterScreenState extends State<ConnectorRegisterScreen> {
       _canSubmit = false;
     });
 
-    // ✅ New Payload
     final payload = <String, dynamic>{
       'fullName': _nameCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),
