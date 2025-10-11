@@ -10,11 +10,16 @@ class RideShareService {
   RideShareService._internal();
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
-
-    
+  final prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('access_token');  // ← Change this line
+  
+  // Clean the token - remove any extra quotes or spaces
+  if (token != null) {
+    token = token.replaceAll('"', '').trim();
   }
+  
+  return token;
+}
 
   Future<List<RideShare>> getAllRideShares() async {
     try {
