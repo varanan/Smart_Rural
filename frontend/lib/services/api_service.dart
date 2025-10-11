@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/core/config.dart';
 
+// Add these imports 👇
+import '../services/database_service.dart';
+import '../services/connectivity_service.dart';
+
 class ApiService {
   // Use dynamic base URL that adapts per platform (web, iOS, Android, desktop)
   static String get baseUrl => AppConfig.baseUrl;
@@ -32,6 +36,11 @@ class ApiService {
     }
 
     return headers;
+  }
+
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
   }
 
   static Future<Map<String, dynamic>> _handleResponse(
@@ -92,6 +101,9 @@ class ApiService {
   }
 
   // Admin Authentication
+  // ===========================
+  // ADMIN AUTHENTICATION
+  // ===========================
   static Future<Map<String, dynamic>> adminRegister({
     required String name,
     required String email,
@@ -112,7 +124,6 @@ class ApiService {
 
       final result = await _handleResponse(response);
 
-      // Store tokens
       if (result['success'] == true && result['data'] != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', result['data']['accessToken']);
@@ -129,12 +140,6 @@ class ApiService {
       throw ApiException(
         message:
             'Cannot connect to server. Please check if the backend is running.',
-        statusCode: 0,
-        errors: null,
-      );
-    } on HttpException {
-      throw ApiException(
-        message: 'HTTP error occurred',
         statusCode: 0,
         errors: null,
       );
@@ -162,7 +167,6 @@ class ApiService {
 
       final result = await _handleResponse(response);
 
-      // Store tokens
       if (result['success'] == true && result['data'] != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', result['data']['accessToken']);
@@ -179,12 +183,6 @@ class ApiService {
       throw ApiException(
         message:
             'Cannot connect to server. Please check if the backend is running.',
-        statusCode: 0,
-        errors: null,
-      );
-    } on HttpException {
-      throw ApiException(
-        message: 'HTTP error occurred',
         statusCode: 0,
         errors: null,
       );
@@ -279,47 +277,104 @@ class ApiService {
     }
   }
 
-  // Bus TimeTable Operations
+  // ===========================
+  // BUS TIMETABLE (OFFLINE SUPPORT)
+  // ===========================
   static Future<Map<String, dynamic>> getBusTimeTable({
     String? from,
     String? to,
     String? startTime,
     String? endTime,
     String? busType,
+    String? status,
   }) async {
+    final connectivityService = ConnectivityService();
+    final isOnline = await connectivityService.isConnected();
+
     try {
-      var url = Uri.parse('$baseUrl/bus-timetable');
+      if (isOnline) {
+        var url = Uri.parse('$baseUrl/bus-timetable');
 
-      // Add query parameters
-      final queryParams = <String, String>{};
-      if (from != null && from.isNotEmpty) queryParams['from'] = from;
-      if (to != null && to.isNotEmpty) queryParams['to'] = to;
-      if (startTime != null && startTime.isNotEmpty) {
-        queryParams['startTime'] = startTime;
-      }
-      if (endTime != null && endTime.isNotEmpty) {
-        queryParams['endTime'] = endTime;
-      }
-      if (busType != null && busType.isNotEmpty) {
-        queryParams['busType'] = busType;
-      }
+        final queryParams = <String, String>{};
+        if (from != null && from.isNotEmpty) queryParams['from'] = from;
+        if (to != null && to.isNotEmpty) queryParams['to'] = to;
+        if (startTime != null && startTime.isNotEmpty) {
+          queryParams['startTime'] = startTime;
+        }
+        if (endTime != null && endTime.isNotEmpty) {
+          queryParams['endTime'] = endTime;
+        }
+        if (busType != null && busType.isNotEmpty) {
+          queryParams['busType'] = busType;
+        }
+        if (status != null && status.isNotEmpty) {
+          queryParams['status'] = status;
+        }
 
-      if (queryParams.isNotEmpty) {
-        url = url.replace(queryParameters: queryParams);
+        if (queryParams.isNotEmpty) {
+          url = url.replace(queryParameters: queryParams);
+        }
+
+        final response = await http
+            .get(url, headers: await _getHeaders(includeAuth: true))
+            .timeout(const Duration(seconds: 10));
+
+        final result = await _handleResponse(response);
+
+        if (result['success'] == true && result['data'] != null) {
+          await DatabaseService.instance.saveBusTimetables(
+            List<Map<String, dynamic>>.from(result['data']),
+          );
+        }
+
+        return result;
+      } else {
+        final localData = await DatabaseService.instance.getBusTimetables(
+          from: from,
+          to: to,
+          startTime: startTime,
+          busType: busType,
+        );
+
+        return {
+          'success': true,
+          'message': 'Data loaded from offline storage',
+          'data': localData.map((item) => {
+                '_id': item['id'],
+                'from': item['from_location'],
+                'to': item['to_location'],
+                'startTime': item['start_time'],
+                'endTime': item['end_time'],
+                'busType': item['bus_type'],
+                'createdAt': item['created_at'],
+                'updatedAt': item['updated_at'],
+              }).toList(),
+          'offline': true,
+        };
       }
-
-      final response = await http
-          .get(url, headers: await _getHeaders(includeAuth: true))
-          .timeout(const Duration(seconds: 10));
-
-      return await _handleResponse(response);
     } on SocketException {
-      throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
-        statusCode: 0,
-        errors: null,
+      final localData = await DatabaseService.instance.getBusTimetables(
+        from: from,
+        to: to,
+        startTime: startTime,
+        busType: busType,
       );
+
+      return {
+        'success': true,
+        'message': 'Cannot connect to server. Showing offline data.',
+        'data': localData.map((item) => {
+              '_id': item['id'],
+              'from': item['from_location'],
+              'to': item['to_location'],
+              'startTime': item['start_time'],
+              'endTime': item['end_time'],
+              'busType': item['bus_type'],
+              'createdAt': item['created_at'],
+              'updatedAt': item['updated_at'],
+            }).toList(),
+        'offline': true,
+      };
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(
@@ -348,18 +403,13 @@ class ApiService {
       };
 
       final response = await http
-          .post(
-            url,
-            headers: await _getHeaders(includeAuth: true),
-            body: json.encode(body),
-          )
+          .post(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
+        message: 'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -392,18 +442,13 @@ class ApiService {
       };
 
       final response = await http
-          .put(
-            url,
-            headers: await _getHeaders(includeAuth: true),
-            body: json.encode(body),
-          )
+          .put(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
           .timeout(const Duration(seconds: 10));
 
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
+        message: 'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -428,8 +473,7 @@ class ApiService {
       return await _handleResponse(response);
     } on SocketException {
       throw ApiException(
-        message:
-            'Cannot connect to server. Please check if the backend is running.',
+        message: 'Cannot connect to server. Please check if the backend is running.',
         statusCode: 0,
         errors: null,
       );
@@ -437,6 +481,272 @@ class ApiService {
       if (e is ApiException) rethrow;
       throw ApiException(
         message: 'Network error: ${e.toString()}',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  // =====================
+  // Review APIs
+  // =====================
+  
+  static Future<Map<String, dynamic>> createReview({
+    required String busId,
+    required int rating,
+    required String comment,
+  }) async {
+    final url = Uri.parse('$baseUrl/reviews');
+    final token = await _getToken();
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'busId': busId,
+        'rating': rating,
+        'comment': comment,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 201 && data['success'] == true) {
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Failed to create review');
+    }
+  }
+
+  static Future<List<dynamic>> getMyReviews() async {
+    final url = Uri.parse('$baseUrl/reviews/my-reviews');
+    final token = await _getToken();
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] ?? [];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to fetch reviews');
+    }
+  }
+
+  static Future<List<dynamic>> getReviewsByBus(String busId) async {
+    final url = Uri.parse('$baseUrl/reviews/bus/$busId');
+
+    final response = await http.get(url);
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] ?? [];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to fetch reviews');
+    }
+  }
+
+  static Future<List<dynamic>> getAllReviews() async {
+    final url = Uri.parse('$baseUrl/reviews');
+    final token = await _getToken();
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] ?? [];
+    } else {
+      throw Exception(data['message'] ?? 'Failed to fetch reviews');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateReview({
+    required String reviewId,
+    int? rating,
+    String? comment,
+  }) async {
+    final url = Uri.parse('$baseUrl/reviews/$reviewId');
+    final token = await _getToken();
+
+    final body = <String, dynamic>{};
+    if (rating != null) body['rating'] = rating;
+    if (comment != null) body['comment'] = comment;
+
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Failed to update review');
+    }
+  }
+
+  static Future<void> deleteReview(String reviewId) async {
+    final url = Uri.parse('$baseUrl/reviews/$reviewId');
+    final token = await _getToken();
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Failed to delete review');
+    }
+  }
+
+  // ===========================
+  // ADMIN VERIFICATION APIs
+  // ===========================
+  
+  static Future<List<dynamic>> getUnverifiedDrivers() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers/unverified');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch unverified drivers',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getUnverifiedConnectors() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/connectors/unverified');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch unverified connectors',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getAllDrivers() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch drivers',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<List<dynamic>> getAllConnectors() async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/connectors');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch connectors',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyDriver(String driverId) async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers/$driverId/verify');
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to verify driver',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> verifyConnector(String connectorId) async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/connectors/$connectorId/verify');
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to verify connector',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> rejectDriver(String driverId, String reason) async {
+    try {
+      final url = Uri.parse('$baseUrl/admin/drivers/$driverId/reject');
+      final body = {'reason': reason};
+
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to reject driver',
         statusCode: 0,
         errors: null,
       );
@@ -695,6 +1005,213 @@ class ApiService {
     } catch (e) {
       print('[ApiService] Error during logout: $e');
       // Don't throw error during logout - we want to clear data even if there's an issue
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('access_token');
+        await prefs.remove('refresh_token');
+        await prefs.remove('user_role');
+        await prefs.remove('user_data');
+  }
+
+  // ===========================
+  // DRIVER SCHEDULE APIs
+  // ===========================
+  
+  static Future<Map<String, dynamic>> getDriverSchedules() async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/my-schedules');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch your schedules',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> createDriverSchedule({
+    required String from,
+    required String to,
+    required String startTime,
+    required String endTime,
+    required String busType,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/create');
+      final body = {
+        'from': from,
+        'to': to,
+        'startTime': startTime,
+        'endTime': endTime,
+        'busType': busType,
+      };
+
+      final response = await http
+          .post(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to create schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateDriverSchedule({
+    required String id,
+    required String from,
+    required String to,
+    required String startTime,
+    required String endTime,
+    required String busType,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/$id');
+      final body = {
+        'from': from,
+        'to': to,
+        'startTime': startTime,
+        'endTime': endTime,
+        'busType': busType,
+      };
+
+      final response = await http
+          .put(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to update schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteDriverSchedule(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/driver/$id');
+
+      final response = await http
+          .delete(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to delete schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  // ===========================
+  // ADMIN SCHEDULE APPROVAL APIs
+  // ===========================
+  
+  static Future<Map<String, dynamic>> approveSchedule(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/$id/approve');
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to approve schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> rejectSchedule(String id, String reason) async {
+    try {
+      final url = Uri.parse('$baseUrl/bus-timetable/$id/reject');
+      final body = {'reason': reason};
+
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true), body: json.encode(body))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to reject schedule',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  // ===========================
+  // NOTIFICATION APIs
+  // ===========================
+  
+  static Future<List<dynamic>> getNotifications() async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data'] ?? [];
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to fetch notifications',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> markNotificationAsRead(String id) async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications/$id/read');
+      final response = await http
+          .patch(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      return await _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Failed to mark notification as read',
+        statusCode: 0,
+        errors: null,
+      );
+    }
+  }
+
+  static Future<int> getUnreadNotificationCount() async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications/unread-count');
+      final response = await http
+          .get(url, headers: await _getHeaders(includeAuth: true))
+          .timeout(const Duration(seconds: 10));
+
+      final result = await _handleResponse(response);
+      return result['data']['count'] ?? 0;
+    } catch (e) {
+      return 0;
     }
   }
 }
