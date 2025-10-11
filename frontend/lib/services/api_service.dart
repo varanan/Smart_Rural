@@ -1005,11 +1005,7 @@ class ApiService {
     } catch (e) {
       print('[ApiService] Error during logout: $e');
       // Don't throw error during logout - we want to clear data even if there's an issue
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-        await prefs.remove('refresh_token');
-        await prefs.remove('user_role');
-        await prefs.remove('user_data');
+    }
   }
 
   // ===========================

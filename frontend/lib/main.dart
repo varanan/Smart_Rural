@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'services/api_service.dart';
 import 'services/sync_service.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/auth/role_select_screen.dart';
@@ -221,6 +222,36 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
     }
   }
 
+  Future<void> _logout(BuildContext context) async {
+    try {
+      await ApiService.logout();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/', 
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -280,6 +311,9 @@ class _DriverHomePlaceholderState extends State<_DriverHomePlaceholder> {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -515,6 +549,10 @@ class _AdminDashboardPlaceholder extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: const BorderSide(color: Colors.red),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => Navigator.pushNamed(context, '/chatbot'),
                     icon: const Icon(Icons.smart_toy),

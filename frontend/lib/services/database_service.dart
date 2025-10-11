@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -7,7 +8,10 @@ class DatabaseService {
 
   DatabaseService._init();
 
-  Future<Database> get database async {
+  Future<Database?> get database async {
+    // Skip database on web platform
+    if (kIsWeb) return null;
+    
     if (_database != null) return _database!;
     _database = await _initDB('smart_rural.db');
     return _database!;
@@ -52,6 +56,7 @@ class DatabaseService {
   // Save bus timetables to local database
   Future<void> saveBusTimetables(List<Map<String, dynamic>> timetables) async {
     final db = await database;
+    if (db == null) return;
     final batch = db.batch();
 
     // Clear old data
@@ -88,6 +93,7 @@ class DatabaseService {
     String? busType,
   }) async {
     final db = await database;
+    if (db == null) return [];
     
     String whereClause = '';
     List<dynamic> whereArgs = [];
@@ -128,6 +134,7 @@ class DatabaseService {
   // Update last sync time
   Future<void> updateLastSync() async {
     final db = await database;
+    if (db == null) return;
     await db.delete('sync_metadata');
     await db.insert('sync_metadata', {
       'id': 1,
@@ -138,6 +145,7 @@ class DatabaseService {
   // Get last sync time
   Future<DateTime?> getLastSync() async {
     final db = await database;
+    if (db == null) return null;
     final results = await db.query('sync_metadata', limit: 1);
     
     if (results.isEmpty) return null;
@@ -147,12 +155,14 @@ class DatabaseService {
   // Close database
   Future<void> close() async {
     final db = await database;
+    if (db == null) return;
     await db.close();
   }
 
   // DEBUG: Get count of cached timetables
   Future<int> getCachedTimetablesCount() async {
     final db = await database;
+    if (db == null) return 0; // Return 0 for web
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM bus_timetables');
     return Sqflite.firstIntValue(result) ?? 0;
   }
@@ -160,6 +170,7 @@ class DatabaseService {
   // DEBUG: Clear all cached data
   Future<void> clearAllData() async {
     final db = await database;
+    if (db == null) return;
     await db.delete('bus_timetables');
     await db.delete('sync_metadata');
   }
