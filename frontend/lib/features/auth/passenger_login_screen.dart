@@ -4,6 +4,8 @@ import '../../widgets/gradient_button.dart';
 import '../../core/auth_api.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/offline_auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class PassengerLoginScreen extends StatefulWidget {
   const PassengerLoginScreen({super.key});
@@ -67,6 +69,12 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
           passenger: passenger,
         );
       }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_passenger', jsonEncode(passenger));
+      await prefs.setString('access_token', tokens['access'] as String);
+
+
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/passengerHome');
