@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../chatbot/chatbot_screen.dart';
 import '../bus_timetable/customer_bus_timetable_screen.dart';
+import '../ride_share/passenger_ride_share_screen.dart';
 
 class PassengerDashboard extends StatefulWidget {
   const PassengerDashboard({super.key});
@@ -198,6 +199,18 @@ class _DashboardHome extends StatelessWidget {
                   'Write a review for your recent journey',
                   () => _showWriteReviewDialog(context),
                 ),
+                _buildActionCard(
+                  context,
+                  'Ride Sharing',
+                  Icons.directions_car,
+                  'Find and request shared rides',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PassengerRideShareScreen(),
+                    ),
+                  ),
+                ),
               ],
             ),
 
@@ -230,6 +243,12 @@ class _DashboardHome extends StatelessWidget {
               'Express vs Regular',
               'Express buses are faster but may have limited stops.',
               Icons.directions_bus,
+            ),
+            const SizedBox(height: 12),
+            _buildTipCard(
+              'Use Ride Sharing',
+              'You can pay by cash before the ride starts.',
+              Icons.directions_car, // Or use Icons.money, Icons.payment, Icons.attach_money
             ),
           ],
         ),

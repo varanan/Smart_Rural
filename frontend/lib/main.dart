@@ -34,6 +34,10 @@ import 'features/admin/verify_users_screen.dart';
 import 'features/driver/driver_schedule_screen.dart';
 import 'features/driver/notifications_screen.dart';
 import 'features/admin/admin_schedule_approval_screen.dart';
+import 'features/dashboard/connector_dashboard.dart';
+import 'features/ride_share/create_ride_share_screen.dart';
+import 'features/ride_share/connector_ride_requests_screen.dart';
+import 'features/ride_share/passenger_ride_share_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,19 +68,16 @@ class MyApp extends StatelessWidget {
         '/auth/driver/register': (context) => const DriverRegisterScreen(),
         '/driverHome': (context) => const _DriverHomePlaceholder(),
         '/auth/passenger/login': (context) => const PassengerLoginScreen(),
-        '/auth/passenger/register': (context) =>
-            const PassengerRegisterScreen(),
+        '/auth/passenger/register': (context) => const PassengerRegisterScreen(),
         '/passengerHome': (context) => const PassengerDashboard(),
         '/auth/admin/login': (context) => const AdminLoginScreen(),
         '/auth/admin/register': (context) => const AdminRegisterScreen(),
         '/adminDashboard': (context) => const _AdminDashboardPlaceholder(),
         '/auth/connector/login': (context) => const ConnectorLoginScreen(),
-        '/auth/connector/register': (context) =>
-            const ConnectorRegisterScreen(),
-        '/connectorPanel': (context) => const _ConnectorPanelPlaceholder(),
+        '/auth/connector/register': (context) => const ConnectorRegisterScreen(),
+        '/connectorPanel': (context) => const ConnectorDashboard(),
         '/bus-timetable': (context) => const BusTimeTableScreen(), // Admin view
-        '/customer-bus-timetable': (context) =>
-            const CustomerBusTimeTableScreen(), // Customer view
+        '/customer-bus-timetable': (context) => const CustomerBusTimeTableScreen(), // Customer view
         // Booking routes
         '/seat-selection': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
@@ -143,6 +144,9 @@ class MyApp extends StatelessWidget {
         '/driver-schedules': (context) => const DriverScheduleScreen(),
         '/driver-notifications': (context) => const NotificationsScreen(),
         '/admin-schedule-approval': (context) => const AdminScheduleApprovalScreen(),
+        '/ride-share/create': (context) => const CreateRideShareScreen(),
+        '/ride-share/requests': (context) => const ConnectorRideRequestsScreen(),
+        '/ride-share/passenger': (context) => const PassengerRideShareScreen(),
       },
     );
   }

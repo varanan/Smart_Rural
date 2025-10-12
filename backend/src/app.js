@@ -16,6 +16,7 @@ const bookingRoutes = require('./routes/booking.routes');
 const pricingRoutes = require('./routes/pricing.routes');
 const reviewRoutes = require('./routes/review.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const rideShareRoutes = require('./routes/ride-share.routes');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ride-share', rideShareRoutes);
 
 // -------------------------
 // Error handling middleware (must be last)

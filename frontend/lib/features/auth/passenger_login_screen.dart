@@ -7,6 +7,7 @@ import '../../core/auth_api.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/offline_auth_service.dart';
 
+
 class PassengerLoginScreen extends StatefulWidget {
   const PassengerLoginScreen({super.key});
 
@@ -77,6 +78,10 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       await prefs.setString('access_token', tokens['access'] as String);
       await prefs.setString('user_role', 'passenger');
       await prefs.setString('user_data', jsonEncode(passenger));
+
+      await prefs.setString('auth_passenger', jsonEncode(passenger));
+
+
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/passengerHome');
