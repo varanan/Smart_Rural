@@ -57,6 +57,14 @@ const rideShareSchema = Joi.object({
       'number.base': 'Price must be a number',
       'number.min': 'Price cannot be negative',
       'any.required': 'Price is required'
+    }),
+    message: Joi.string()
+    .trim()
+    .max(500)
+    .allow('')
+    .optional()
+    .messages({
+      'string.max': 'Message cannot exceed 500 characters'
     })
 });
 

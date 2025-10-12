@@ -11,6 +11,7 @@ class RideShare {
   final List<RideRequest> requests;
   final int availableSeats;
    final Map<String, dynamic>? connectorDetails;
+   final String message;
 
   RideShare({
     required this.id,
@@ -25,6 +26,7 @@ class RideShare {
     required this.requests,
     required this.availableSeats,
     this.connectorDetails,
+    required this.message,
   });
 
   factory RideShare.fromJson(Map<String, dynamic> json) {
@@ -49,6 +51,7 @@ class RideShare {
       connectorDetails: (json['createdBy'] is Map) 
           ? Map<String, dynamic>.from(json['createdBy'])
           : null,
+          message: json['message'] ?? '',
     );
   }
 }

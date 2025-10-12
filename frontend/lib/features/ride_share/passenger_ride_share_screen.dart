@@ -211,6 +211,36 @@ class _AvailableRidesTab extends StatelessWidget {
                           Text('Available Seats: ${ride.availableSeats}'),
                           Text('Price: Rs. ${ride.price}'),
                           
+                          // ADD MESSAGE DISPLAY HERE
+                          if (ride.message.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue.shade100),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Message from Connector:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    ride.message,
+                                    style: const TextStyle(color: Colors.blue),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
                           // ADD CONNECTOR DETAILS HERE
                           const SizedBox(height: 12),
                           const Divider(),
@@ -294,6 +324,36 @@ class _MyRidesTab extends StatelessWidget {
                           Text('Price: Rs. ${ride.price}'),
                           Text('Requested on: ${_formatDate(myRequest.requestedAt)}'),
                           
+// ADD MESSAGE DISPLAY HERE
+                          if (ride.message.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue.shade100),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Message from Connector:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    ride.message,
+                                    style: const TextStyle(color: Colors.blue),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
                           // ADD CONNECTOR DETAILS HERE
                           const SizedBox(height: 12),
                           const Divider(),

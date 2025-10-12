@@ -14,6 +14,7 @@ class CreateRideShareScreenState extends State<CreateRideShareScreen> {
   final _toController = TextEditingController();
   final _timeController = TextEditingController();
   final _priceController = TextEditingController();
+  final _messageController = TextEditingController();
   String _selectedVehicleType = 'Car';
   int _seatCapacity = 1;
   bool _isLoading = false;
@@ -24,6 +25,7 @@ class CreateRideShareScreenState extends State<CreateRideShareScreen> {
     _toController.dispose();
     _timeController.dispose();
     _priceController.dispose();
+    _messageController.dispose();
     super.dispose();
   }
 
@@ -40,6 +42,7 @@ class CreateRideShareScreenState extends State<CreateRideShareScreen> {
         'vehicleType': _selectedVehicleType,
         'seatCapacity': _seatCapacity,
         'price': double.parse(_priceController.text),
+        'message': _messageController.text,
       });
 
       if (!mounted) return;
@@ -170,6 +173,17 @@ class CreateRideShareScreenState extends State<CreateRideShareScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _messageController,
+                decoration: const InputDecoration(
+                  labelText: 'Message for Passengers (Optional)',
+                  hintText: 'e.g., I\'ll be waiting near the main gate, leaving 30 mins early, etc.',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                // No validator since it's optional
               ),
               const SizedBox(height: 24),
               ElevatedButton(

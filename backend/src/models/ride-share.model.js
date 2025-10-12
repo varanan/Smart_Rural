@@ -60,6 +60,12 @@ const rideShareSchema = new mongoose.Schema({
   availableSeats: {
     type: Number,
     required: true
+  },
+  message: {
+    type: String,
+    default: '',
+    trim: true,
+    maxLength: [500, 'Message cannot exceed 500 characters']
   }
 }, {
   timestamps: true
