@@ -35,7 +35,11 @@ class RideShare {
       seatCapacity: json['seatCapacity'],
       price: json['price'].toDouble(),
       isActive: json['isActive'],
-      createdBy: json['createdBy'],
+      createdBy: (json['createdBy'] is String) 
+        ? json['createdBy'] 
+        : (json['createdBy'] is Map) 
+            ? (json['createdBy']['id']?.toString() ?? json['createdBy']['_id']?.toString() ?? '')
+            : '',
       requests: (json['requests'] as List?)
           ?.map((req) => RideRequest.fromJson(req))
           .toList() ?? [],
@@ -60,12 +64,29 @@ class RideRequest {
   });
 
   factory RideRequest.fromJson(Map<String, dynamic> json) {
-    return RideRequest(
-      id: json['_id'] ?? json['id'],
-      passengerId: json['passenger'],
-      status: json['status'],
-      requestedAt: DateTime.parse(json['requestedAt']),
-      passengerDetails: json['passenger'] is Map ? json['passenger'] : null,
-    );
+  // Handle passenger field - it could be String ID or full Map object
+  final passengerData = json['passenger'];
+  
+  String passengerId;
+  Map<String, dynamic>? passengerDetails;
+  
+  if (passengerData is String) {
+    passengerId = passengerData;
+    passengerDetails = null;
+  } else if (passengerData is Map) {
+    passengerId = passengerData['_id']?.toString() ?? passengerData['id']?.toString() ?? '';
+    passengerDetails = Map<String, dynamic>.from(passengerData);
+  } else {
+    passengerId = '';
+    passengerDetails = null;
   }
+
+  return RideRequest(
+    id: json['_id'] ?? json['id'],
+    passengerId: passengerId,
+    status: json['status'],
+    requestedAt: DateTime.parse(json['requestedAt']),
+    passengerDetails: passengerDetails,
+  );
+}
 }

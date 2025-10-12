@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/ride_share.dart';
 import 'package:frontend/services/ride_share_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class PassengerRideShareScreen extends StatefulWidget {
   const PassengerRideShareScreen({super.key});
@@ -28,11 +29,31 @@ class PassengerRideShareScreenState extends State<PassengerRideShareScreen>
   }
 
   Future<void> _loadPassengerId() async {
+  try {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Get passenger data from the key used by AuthStorage
+    final passengerJson = prefs.getString('auth_passenger');
+    
+    if (passengerJson != null) {
+      final passengerData = json.decode(passengerJson) as Map<String, dynamic>;
+      setState(() {
+        _passengerId = passengerData['_id']?.toString();
+      });
+      print('Loaded passengerId: $_passengerId');
+    } else {
+      print('No passenger data found in auth_passenger');
+      setState(() {
+        _passengerId = null;
+      });
+    }
+  } catch (e) {
+    print('Error loading passenger ID: $e');
     setState(() {
-      _passengerId = prefs.getString('userId');
+      _passengerId = null;
     });
   }
+}
 
   Future<void> _loadRides() async {
     try {
