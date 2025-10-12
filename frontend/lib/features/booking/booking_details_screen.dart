@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/booking.dart';
-import '../../models/payment.dart';
 import '../../services/api_service.dart';
+import '../reviews/review_form_screen.dart';
 
 class BookingDetailsScreen extends StatefulWidget {
   final Booking booking;
@@ -16,45 +16,9 @@ class BookingDetailsScreen extends StatefulWidget {
 }
 
 class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
-  Payment? _payment;
-  bool _isLoadingPayment = false;
-  String? _paymentError;
-
   @override
   void initState() {
     super.initState();
-    if (widget.booking.payment != null) {
-      _payment = widget.booking.payment;
-    } else {
-      _loadPaymentDetails();
-    }
-  }
-
-  Future<void> _loadPaymentDetails() async {
-    try {
-      setState(() {
-        _isLoadingPayment = true;
-        _paymentError = null;
-      });
-
-      final response = await ApiService.getPaymentByBookingId(widget.booking.id!);
-      if (response['success']) {
-        setState(() {
-          _payment = Payment.fromJson(response['data']);
-          _isLoadingPayment = false;
-        });
-      } else {
-        setState(() {
-          _paymentError = response['message'] ?? 'Failed to load payment details';
-          _isLoadingPayment = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _paymentError = 'Error loading payment details: ${e.toString()}';
-        _isLoadingPayment = false;
-      });
-    }
   }
 
   Future<void> _cancelBooking() async {
@@ -142,7 +106,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
             const SizedBox(height: 16),
             _buildPassengerDetails(),
             const SizedBox(height: 16),
-            _buildPaymentSection(),
+            if (widget.booking.bookingStatus == BookingStatus.confirmed)
+              _buildReviewSection(),
           ],
         ),
       ),
@@ -283,66 +248,6 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     );
   }
 
-  Widget _buildPaymentSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Payment Details',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_isLoadingPayment)
-              const Center(child: CircularProgressIndicator())
-            else if (_paymentError != null)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red[700]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _paymentError!,
-                        style: TextStyle(color: Colors.red[700]),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (_payment != null)
-              Column(
-                children: [
-                  _buildInfoRow('Payment Method', _payment!.paymentMethod.toUpperCase()),
-                  _buildInfoRow('Amount', 'LKR ${_payment!.amount.toStringAsFixed(2)}',
-                      valueColor: Colors.orange[700]),
-                  _buildInfoRow('Currency', _payment!.currency),
-                  _buildInfoRow('Status', _payment!.paymentStatus.toString().split('.').last.toUpperCase(),
-                      statusColor: _getPaymentStatusColor(_payment!.paymentStatus)),
-                  if (_payment!.transactionId != null)
-                    _buildInfoRow('Transaction ID', _payment!.transactionId!),
-                  if (_payment!.paidAt != null)
-                    _buildInfoRow('Paid At', _formatDateTime(_payment!.paidAt!)),
-                ],
-              )
-            else
-              const Text('No payment information available'),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoRow(String label, String value, {Color? statusColor, Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -399,21 +304,6 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     }
   }
 
-  Color _getPaymentStatusColor(PaymentStatus status) {
-    switch (status) {
-      case PaymentStatus.pending:
-        return Colors.orange;
-      case PaymentStatus.completed:
-        return Colors.green;
-      case PaymentStatus.failed:
-        return Colors.red;
-      case PaymentStatus.refunded:
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
   Color _getBusTypeColor(String busType) {
     switch (busType) {
       case 'Normal':
@@ -437,5 +327,58 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildReviewSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Share Your Experience',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Help other passengers by sharing your experience with this bus service.',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToWriteReview(),
+                icon: const Icon(Icons.rate_review),
+                label: const Text('Write Review'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange[600],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToWriteReview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReviewFormScreen(
+          bus: widget.booking.busTimeTable,
+        ),
+      ),
+    );
   }
 }
