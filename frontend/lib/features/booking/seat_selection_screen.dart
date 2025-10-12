@@ -40,6 +40,19 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         _error = null;
       });
 
+      // Debug logging
+      print('[SeatSelection] Timetable ID: ${widget.timetable.id}');
+      print('[SeatSelection] Timetable data: ${widget.timetable.toJson()}');
+      print('[SeatSelection] Journey date: ${widget.journeyDate}');
+
+      if (widget.timetable.id == null) {
+        setState(() {
+          _error = 'Invalid timetable: Missing ID';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final response = await ApiService.getSeatAvailability(
         timetableId: widget.timetable.id!,
         journeyDate: widget.journeyDate,

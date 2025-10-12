@@ -14,6 +14,9 @@ const { busTimeTableSchema, validate } = require('../controllers/validators/bus-
 
 const router = express.Router();
 
+// Public route for customers to view approved schedules
+router.get('/public', getBusTimeTable);
+
 // Protected route - requires authentication to see pending schedules
 router.get('/', authenticate, getBusTimeTable);
 router.get('/:id', authenticate, getBusTimeTableById);

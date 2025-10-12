@@ -827,6 +827,12 @@ class _CustomerBusTimeTableScreenState
   }
 
   void _bookTicket(BusTimeTable timetable) {
+    // Debug logging
+    print('[CustomerTimetable] Booking ticket for timetable:');
+    print('[CustomerTimetable] ID: ${timetable.id}');
+    print('[CustomerTimetable] Route: ${timetable.from} -> ${timetable.to}');
+    print('[CustomerTimetable] Full data: ${timetable.toJson()}');
+    
     // Show date picker for journey date
     showDatePicker(
       context: context,

@@ -293,7 +293,7 @@ class ApiService {
 
     try {
       if (isOnline) {
-        var url = Uri.parse('$baseUrl/bus-timetable');
+        var url = Uri.parse('$baseUrl/bus-timetable/public');
 
         final queryParams = <String, String>{};
         if (from != null && from.isNotEmpty) queryParams['from'] = from;
@@ -316,7 +316,7 @@ class ApiService {
         }
 
         final response = await http
-            .get(url, headers: await _getHeaders(includeAuth: true))
+            .get(url, headers: await _getHeaders(includeAuth: false))
             .timeout(const Duration(seconds: 10));
 
         final result = await _handleResponse(response);
