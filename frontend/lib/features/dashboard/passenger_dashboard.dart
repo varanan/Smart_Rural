@@ -223,6 +223,12 @@ class _DashboardHome extends StatelessWidget {
               'Express buses are faster but may have limited stops.',
               Icons.directions_bus,
             ),
+            const SizedBox(height: 12),
+            _buildTipCard(
+              'Use Ride Sharing',
+              'You can pay by cash before the ride starts.',
+              Icons.directions_car, // Or use Icons.money, Icons.payment, Icons.attach_money
+            ),
           ],
         ),
       ),
