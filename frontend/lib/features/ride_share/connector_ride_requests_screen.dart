@@ -222,14 +222,40 @@ class _RequestItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Passenger Name
                 Text(
                   request.passengerDetails?['fullName'] ?? 'Passenger',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
+                const SizedBox(height: 4),
+                // Passenger Phone
+                if (request.passengerDetails?['phone'] != null)
+                  Text(
+                    'Phone: ${request.passengerDetails!['phone']}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                // Passenger Email (if available)
+                if (request.passengerDetails?['email'] != null)
+                  Text(
+                    'Email: ${request.passengerDetails!['email']}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                // Request Status
                 Text(
                   'Status: ${request.status}',
                   style: TextStyle(
                     color: _getStatusColor(request.status),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -238,12 +264,18 @@ class _RequestItem extends StatelessWidget {
           if (request.status == 'pending') ...[
             TextButton(
               onPressed: onAccept,
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Accept'),
             ),
+            const SizedBox(width: 8),
             TextButton(
               onPressed: onReject,
               style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
               ),
               child: const Text('Reject'),
             ),
