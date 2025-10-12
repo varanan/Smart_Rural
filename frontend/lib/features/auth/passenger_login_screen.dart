@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
 import '../../core/auth_api.dart';
@@ -62,13 +64,21 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       final passenger = Map<String, dynamic>.from(data['passenger'] as Map);
 
-      if (_rememberMe) {
-        await AuthStorage.savePassenger(
-          access: tokens['access'] as String,
-          refresh: tokens['refresh'] as String,
-          passenger: passenger,
-        );
-      }
+      // Always save tokens for authenticated requests
+      // ✅ FIXED: Save token in both formats for compatibility
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Save for AuthStorage (old system)
+      await AuthStorage.savePassenger(
+        access: tokens['access'] as String,
+        refresh: tokens['refresh'] as String,
+        passenger: passenger,
+      );
+      
+      // ✅ NEW: Also save for ApiService (new review system)
+      await prefs.setString('access_token', tokens['access'] as String);
+      await prefs.setString('user_role', 'passenger');
+      await prefs.setString('user_data', jsonEncode(passenger));
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_passenger', jsonEncode(passenger));

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/validators.dart';
 import '../../widgets/gradient_button.dart';
 import '../../core/auth_api.dart';
@@ -27,8 +29,38 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   bool _agree = false;
   bool _loading = false;
   bool _canSubmit = false;
+  bool _isReRegistration = false;
 
   final _api = DriverAuthApi();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForPrefilledEmail();
+  }
+
+  Future<void> _checkForPrefilledEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('reregister_email');
+    if (email != null) {
+      setState(() {
+        _emailCtrl.text = email;
+        _isReRegistration = true; // Set flag
+      });
+      // Remove it so it doesn't persist
+      await prefs.remove('reregister_email');
+      
+      // Show helpful message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please update your information and try again'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -76,19 +108,45 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
 
       final tokens = Map<String, dynamic>.from(data['tokens'] as Map);
       final driver = Map<String, dynamic>.from(data['driver'] as Map);
+      
+      // ✅ FIXED: Save token in both formats for compatibility
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Save for AuthStorage (old system)
       await AuthStorage.saveDriver(
         access: tokens['access'] as String,
         refresh: tokens['refresh'] as String,
         driver: driver,
       );
+      
+      // ✅ NEW: Also save for ApiService (review system)
+      await prefs.setString('access_token', tokens['access'] as String);
+      await prefs.setString('user_role', 'driver');
+      await prefs.setString('user_data', jsonEncode(driver));
 
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/driverHome');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
+      
+      String errorMessage = 'Registration failed: $e';
+      
+      // Provide better error messages
+      if (e.toString().contains('email already exists')) {
+        errorMessage = 'This email is already registered. Please use a different email or contact support.';
+      } else if (e.toString().contains('license number already exists')) {
+        errorMessage = 'This license number is already registered. Please verify and try again.';
+      } else if (e.toString().contains('NIC number already exists')) {
+        errorMessage = 'This NIC number is already registered. Please verify and try again.';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -129,6 +187,36 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Add this banner for re-registration
+                        if (_isReRegistration)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.info, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Re-Registration: Please update your information based on the rejection reason.',
+                                    style: TextStyle(
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        
+                        // Existing registration form continues here...
                         Text(
                           'Driver Sign Up',
                           style: theme.textTheme.titleLarge?.copyWith(

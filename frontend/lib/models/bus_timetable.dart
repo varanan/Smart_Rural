@@ -5,6 +5,8 @@ class BusTimeTable {
   final String startTime;
   final String endTime;
   final String busType;
+  final String status; // 'approved', 'pending', 'rejected'
+  final String? rejectionReason;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -15,6 +17,8 @@ class BusTimeTable {
     required this.startTime,
     required this.endTime,
     required this.busType,
+    this.status = 'approved',
+    this.rejectionReason,
     this.createdAt,
     this.updatedAt,
   });
@@ -27,6 +31,8 @@ class BusTimeTable {
       startTime: json['startTime'] ?? '',
       endTime: json['endTime'] ?? '',
       busType: json['busType'] ?? '',
+      status: json['status'] ?? 'approved',
+      rejectionReason: json['rejectionReason'],
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt']) 
           : null,
@@ -44,6 +50,8 @@ class BusTimeTable {
       'startTime': startTime,
       'endTime': endTime,
       'busType': busType,
+      'status': status,
+      if (rejectionReason != null) 'rejectionReason': rejectionReason,
     };
   }
 
@@ -54,6 +62,8 @@ class BusTimeTable {
     String? startTime,
     String? endTime,
     String? busType,
+    String? status,
+    String? rejectionReason,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -64,6 +74,8 @@ class BusTimeTable {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       busType: busType ?? this.busType,
+      status: status ?? this.status,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

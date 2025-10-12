@@ -4,12 +4,19 @@ const busTimeTableSchema = new mongoose.Schema({
   from: {
     type: String,
     required: [true, 'From location is required'],
-    trim: true
+    trim: true,
+    uppercase: true
   },
   to: {
     type: String,
     required: [true, 'To location is required'],
-    trim: true
+    trim: true,
+    uppercase: true
+  },
+  route: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Route',
+    required: false // Optional for backward compatibility
   },
   startTime: {
     type: String,
@@ -33,11 +40,52 @@ const busTimeTableSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
-    required: true
+    refPath: 'createdByModel'
+  },
+  createdByModel: {
+    type: String,
+    enum: ['Admin', 'Driver'],
+    default: 'Admin'
+  },
+  status: {
+    type: String,
+    enum: ['approved', 'pending', 'rejected'],
+    default: 'approved'
+  },
+  rejectionReason: {
+    type: String,
+    default: null
+  },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin'
+  },
+  reviewedAt: {
+    type: Date
   }
 }, {
   timestamps: true
+});
+
+// Auto-link route before saving
+busTimeTableSchema.pre('save', async function(next) {
+  if (!this.route && this.from && this.to) {
+    try {
+      const Route = mongoose.model('Route');
+      const route = await Route.findOne({
+        from: this.from.toUpperCase(),
+        to: this.to.toUpperCase(),
+        isActive: true
+      });
+      
+      if (route) {
+        this.route = route._id;
+      }
+    } catch (error) {
+      // Continue without route if not found
+    }
+  }
+  next();
 });
 
 // Create indexes for better query performance
@@ -45,5 +93,8 @@ busTimeTableSchema.index({ from: 1, to: 1 });
 busTimeTableSchema.index({ startTime: 1 });
 busTimeTableSchema.index({ busType: 1 });
 busTimeTableSchema.index({ isActive: 1 });
+busTimeTableSchema.index({ route: 1 });
+busTimeTableSchema.index({ status: 1 });
+busTimeTableSchema.index({ createdBy: 1 });
 
 module.exports = mongoose.model('BusTimeTable', busTimeTableSchema);

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/bus_timetable.dart';
 import '../../services/api_service.dart';
 import '../../services/database_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/offline_auth_service.dart';
+import 'dart:convert';
+import '../reviews/bus_reviews_screen.dart';
 
 class CustomerBusTimeTableScreen extends StatefulWidget {
   const CustomerBusTimeTableScreen({super.key});
@@ -756,6 +759,31 @@ class _CustomerBusTimeTableScreenState
                 ],
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Booking Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _bookTicket(timetable),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF97316),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Book Ticket',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -796,5 +824,46 @@ class _CustomerBusTimeTableScreenState
       default:
         return Colors.orange;
     }
+  }
+
+  void _bookTicket(BusTimeTable timetable) {
+    // Debug logging
+    print('[CustomerTimetable] Booking ticket for timetable:');
+    print('[CustomerTimetable] ID: ${timetable.id}');
+    print('[CustomerTimetable] Route: ${timetable.from} -> ${timetable.to}');
+    print('[CustomerTimetable] Full data: ${timetable.toJson()}');
+    
+    // Show date picker for journey date
+    showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFF97316),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    ).then((selectedDate) {
+      if (selectedDate != null) {
+        // Navigate to seat selection screen
+        Navigator.pushNamed(
+          context,
+          '/seat-selection',
+          arguments: {
+            'timetable': timetable,
+            'journeyDate': selectedDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+          },
+        );
+      }
+    });
   }
 }

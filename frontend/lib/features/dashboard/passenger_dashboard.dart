@@ -133,7 +133,7 @@ class _DashboardHome extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: 1.2,
+              childAspectRatio: 1.1,
               children: [
                 _buildActionCard(
                   context,
@@ -180,15 +180,24 @@ class _DashboardHome extends StatelessWidget {
                 ),
                 _buildActionCard(
                   context,
-                  'Ride Sharing',
-                  Icons.directions_car,
-                  'Find and request shared rides',
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PassengerRideShareScreen(),
-                    ),
-                  ),
+                  'My Bookings',
+                  Icons.book_online,
+                  'View and manage your bus bookings',
+                  () => Navigator.pushNamed(context, '/my-bookings'),
+                ),
+                _buildActionCard(
+                  context,
+                  'My Reviews',
+                  Icons.rate_review,
+                  'View and manage your bus reviews',
+                  () => Navigator.pushNamed(context, '/my-reviews'),
+                ),
+                _buildActionCard(
+                  context,
+                  'Write Review',
+                  Icons.edit_note,
+                  'Write a review for your recent journey',
+                  () => _showWriteReviewDialog(context),
                 ),
               ],
             ),
@@ -314,6 +323,37 @@ class _DashboardHome extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showWriteReviewDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Write a Review'),
+          content: const Text(
+            'To write a review, please:\n\n'
+            '1. Go to "My Bookings" to find your completed journey\n'
+            '2. Click "View Details" on your booking\n'
+            '3. Look for the "Write Review" option\n\n'
+            'Or you can go to "My Reviews" to manage existing reviews.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(context, '/my-bookings');
+              },
+              child: const Text('Go to My Bookings'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

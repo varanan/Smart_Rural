@@ -9,7 +9,7 @@ if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
 }
 
 const signAccessToken = (payload) => {
-  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: '15m' });
+  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: '2h' }); // Extended to 2 hours
 };
 
 const signRefreshToken = (payload) => {

@@ -12,7 +12,10 @@ const passengerRoutes = require('./routes/passenger.routes');
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const busTimeTableRoutes = require('./routes/bus-timetable.routes');
-const rideShareRoutes = require('./routes/ride-share.routes');
+const bookingRoutes = require('./routes/booking.routes');
+const pricingRoutes = require('./routes/pricing.routes');
+const reviewRoutes = require('./routes/review.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 const app = express();
 
@@ -43,7 +46,10 @@ app.use('/api/passenger', passengerRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bus-timetable', busTimeTableRoutes);
-app.use('/api/ride-share', rideShareRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/pricing', pricingRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // -------------------------
 // Error handling middleware (must be last)
@@ -68,10 +74,10 @@ const startServer = async () => {
     await connectDB();
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
-      logger.info(`🚀 Server running on port ${port}`);
+      logger.info(`Server running on port ${port}`);
     });
   } catch (error) {
-    logger.error('❌ Failed to start server', { error: error.message });
+    logger.error('Failed to start server', { error: error.message });
     process.exit(1);
   }
 };

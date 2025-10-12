@@ -249,6 +249,17 @@ class AuthStorage {
     await sp.remove(_kDriver);
     await sp.remove(_kPassenger);
     await sp.remove(_kConnector);
+    
+    // Also clear any additional auth-related keys that might exist
+    await sp.remove('access_token');
+    await sp.remove('refresh_token');
+    await sp.remove('user_role');
+    await sp.remove('user_data');
+    await sp.remove('auth_access');
+    await sp.remove('auth_refresh');
+    await sp.remove('auth_passenger');
+    await sp.remove('auth_driver');
+    await sp.remove('auth_connector');
   }
 }
 
