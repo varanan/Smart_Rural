@@ -159,6 +159,20 @@ class PassengerRideShareScreenState extends State<PassengerRideShareScreen>
   }
 }
 
+String _getConnectorName(RideShare ride) {
+  if (ride.connectorDetails != null) {
+    return ride.connectorDetails!['fullName'] ?? 'Connector';
+  }
+  return ride.createdBy; // Fallback to ID if no details
+}
+
+String _getConnectorPhone(RideShare ride) {
+  if (ride.connectorDetails != null) {
+    return ride.connectorDetails!['phone'] ?? 'N/A';
+  }
+  return 'N/A';
+}
+
 class _AvailableRidesTab extends StatelessWidget {
   final List<RideShare> rides;
   final Function(RideShare) onRequestRide;
@@ -189,36 +203,50 @@ class _AvailableRidesTab extends StatelessWidget {
                       subtitle: Text('Time: ${ride.startTime}'),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Vehicle: ${ride.vehicleType}'),
-                          Text(
-                            'Available Seats: ${ride.availableSeats}',
-                          ),
-                          Text('Price: Rs. ${ride.price}'),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: ride.availableSeats > 0
-                                  ? () => onRequestRide(ride)
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2563EB),
-                                foregroundColor: Colors.white,
-                              ),
-                              child: Text(
-                                ride.availableSeats > 0
-                                    ? 'Request Ride'
-                                    : 'No Seats Available',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+  padding: const EdgeInsets.all(16),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Vehicle: ${ride.vehicleType}'),
+      Text('Available Seats: ${ride.availableSeats}'),
+      Text('Price: Rs. ${ride.price}'),
+      
+      // ADD CONNECTOR DETAILS HERE
+      const SizedBox(height: 12),
+      const Divider(),
+      const Text(
+        'Connector Details:',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text('Name: ${_getConnectorName(ride)}'),
+      Text('Phone: ${_getConnectorPhone(ride)}'),
+      // END OF CONNECTOR DETAILS
+      
+      const SizedBox(height: 16),
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: ride.availableSeats > 0
+              ? () => onRequestRide(ride)
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2563EB),
+            foregroundColor: Colors.white,
+          ),
+          child: Text(
+            ride.availableSeats > 0
+                ? 'Request Ride'
+                : 'No Seats Available',
+          ),
+        ),
+      ),
+    ],
+  ),
+),
                   ],
                 ),
               );
@@ -258,18 +286,31 @@ class _MyRidesTab extends StatelessWidget {
                       trailing: _getStatusChip(myRequest.status),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Vehicle: ${ride.vehicleType}'),
-                          Text('Price: Rs. ${ride.price}'),
-                          Text(
-                            'Requested on: ${_formatDate(myRequest.requestedAt)}',
-                          ),
-                        ],
-                      ),
-                    ),
+  padding: const EdgeInsets.all(16),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Vehicle: ${ride.vehicleType}'),
+      Text('Price: Rs. ${ride.price}'),
+      Text('Requested on: ${_formatDate(myRequest.requestedAt)}'),
+      
+      // ADD CONNECTOR DETAILS HERE
+      const SizedBox(height: 12),
+      const Divider(),
+      const Text(
+        'Connector Details:',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text('Name: ${_getConnectorName(ride)}'),
+      Text('Phone: ${_getConnectorPhone(ride)}'),
+      // END OF CONNECTOR DETAILS
+    ],
+  ),
+),
                   ],
                 ),
               );
