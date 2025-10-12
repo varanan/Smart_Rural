@@ -32,17 +32,37 @@ class PassengerRideShareScreenState extends State<PassengerRideShareScreen>
   try {
     final prefs = await SharedPreferences.getInstance();
     
-    // Get passenger data from the key used by AuthStorage
-    final passengerJson = prefs.getString('auth_passenger');
+    // Check ALL possible keys where passenger data might be stored
+    final passengerJson = prefs.getString('auth_passenger') ?? 
+                         prefs.getString('passenger') ??
+                         prefs.getString('user_data');
+    
+    // Also check if userId is stored directly
+    final directUserId = prefs.getString('userId') ??
+                        prefs.getString('user_id') ??
+                        prefs.getString('passenger_id');
+    
+    print('=== DEBUG STORAGE ===');
+    print('auth_passenger: ${prefs.getString('auth_passenger') != null}');
+    print('passenger: ${prefs.getString('passenger') != null}');
+    print('user_data: ${prefs.getString('user_data') != null}');
+    print('userId: ${prefs.getString('userId')}');
+    print('user_id: ${prefs.getString('user_id')}');
+    print('passenger_id: ${prefs.getString('passenger_id')}');
     
     if (passengerJson != null) {
       final passengerData = json.decode(passengerJson) as Map<String, dynamic>;
       setState(() {
-        _passengerId = passengerData['_id']?.toString();
+        _passengerId = passengerData['id']?.toString();
       });
-      print('Loaded passengerId: $_passengerId');
+      print('Loaded passengerId from JSON: $_passengerId');
+    } else if (directUserId != null) {
+      setState(() {
+        _passengerId = directUserId;
+      });
+      print('Loaded passengerId directly: $_passengerId');
     } else {
-      print('No passenger data found in auth_passenger');
+      print('No passenger data found anywhere');
       setState(() {
         _passengerId = null;
       });

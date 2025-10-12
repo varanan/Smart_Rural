@@ -107,10 +107,12 @@ class RideShareService {
 
   Future<RideShare> requestRide(String rideId, String passengerId) async {
     try {
+      //final token = await _getToken();
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/ride-share/request'),
-        headers: {
+       headers: {
           'Content-Type': 'application/json',
+          //'Authorization': 'Bearer $token',
         },
         body: json.encode({
           'rideId': rideId,
@@ -159,8 +161,13 @@ class RideShareService {
 
   Future<List<RideShare>> getPassengerRides(String passengerId) async {
     try {
+      //final token = await _getToken();
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/ride-share/passenger?passengerId=$passengerId'),
+      //   headers: {
+      //   'Authorization': 'Bearer $token', // Consider adding this
+        
+      // },
       );
 
       if (response.statusCode == 200) {
